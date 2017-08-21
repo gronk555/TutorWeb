@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+ <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+      <Diagram DiagramId="1419de597b8c49f8a0ccc876ea240bc6" Name="Diagram1">
+        <EntityTypeShape EntityType="Model.Device" Width="1.5" PointX="7.25" PointY="3.875" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Module2Tag" Width="1.5" PointX="5.125" PointY="1.125" IsExpanded="true" />
+        <EntityTypeShape EntityType="Model.Tag" Width="1.5" PointX="7.125" PointY="1" IsExpanded="true" />
+        <AssociationConnector Association="Model.FK_Module2Tag_Tag" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="Model.Lang" Width="1.5" PointX="0.75" PointY="0.75" />
+        <EntityTypeShape EntityType="Model.Payment" Width="1.5" PointX="9.375" PointY="0.75" />
+        <EntityTypeShape EntityType="Model.Device2Module" Width="1.5" PointX="5.125" PointY="3.75" />
+        <AssociationConnector Association="Model.FK_Device2Module_Device" />
+        <EntityTypeShape EntityType="Model.AspNetUser" Width="1.5" PointX="0.875" PointY="3.125" />
+        <EntityTypeShape EntityType="Model.Module" Width="1.5" PointX="3.125" PointY="1.375" />
+        <AssociationConnector Association="Model.FK_AspNetUsers_Module" />
+        <AssociationConnector Association="Model.FK_Device2Module_Module" />
+        <AssociationConnector Association="Model.FK_Module2Tag_Module" />
+        </Diagram>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>

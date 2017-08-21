@@ -1,0 +1,162 @@
+﻿@model WebApplication4.Controllers.CreateViewModel
+
+@{
+	ViewBag.Title = "Details";
+}
+
+<div>
+
+	@if (Model.ImagePath != null)
+	{
+		<img src="@Model.ImagePath" alt="Image" style="max-height: 150px; max-width: 150px;" />
+	}
+
+	<dl class="dl-horizontal">
+		<dt>
+			@Html.DisplayNameFor(model => model.Name)
+		</dt>
+
+		<dd>
+			@Html.DisplayFor(model => model.Name)
+		</dd>
+
+    <dt>
+      @Html.DisplayNameFor(model => model.ForeignName)
+    </dt>
+
+    <dd>
+      @Html.DisplayFor(model => model.ForeignName)
+    </dd>
+
+		<dt>
+			@Html.DisplayNameFor(model => model.Description)
+		</dt>
+
+		<dd>
+			@Html.DisplayFor(model => model.Description)
+		</dd>
+
+    <dt>
+      @Html.DisplayNameFor(model => model.ForeignDescription)
+    </dt>
+
+    <dd>
+      @Html.DisplayFor(model => model.ForeignDescription)
+    </dd>
+
+		<dt>
+			@Html.DisplayNameFor(model => model.Price)
+		</dt>
+
+		<dd>
+			@Html.DisplayFor(model => model.Price)
+		</dd>
+
+		@if (Model.IsAdmin)
+		{
+			<dt>
+				@Html.DisplayNameFor(model => model.SoldNumber)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.SoldNumber)
+			</dd>
+		}
+
+		<dt>
+			@Html.DisplayNameFor(model => model.NativeLang)
+		</dt>
+
+		<dd>
+			@Html.DisplayFor(model => model.NativeLang)
+		</dd>
+
+		<dt>
+			@Html.DisplayNameFor(model => model.ForeignLang)
+		</dt>
+
+		<dd>
+			@Html.DisplayFor(model => model.ForeignLang)
+		</dd>
+
+		<dt>
+			@Html.DisplayNameFor(model => model.Text)
+		</dt>
+
+		<dd>
+			<pre>@Html.DisplayFor(model => model.Text)</pre>
+			@*@Html.DisplayFor(model => model.Text)*@
+		</dd>
+
+		@if (Model.IsAdmin)
+		{
+			<dt>
+				@Html.DisplayNameFor(model => model.UserName)
+			</dt>
+
+			<dd>
+				@Html.DisplayFor(model => model.UserName)
+			</dd>
+		}
+
+	</dl>
+</div>
+<p>
+	@{		
+    if (Model.IsAdmin)
+    {
+      using (Html.BeginForm("RunTTS", "Module", FormMethod.Post))
+      {
+     		@Html.HiddenFor(model => model.Id)
+     		@Html.HiddenFor(model => model.Name)
+
+        <dt>
+          @Html.DisplayNameFor(model => model.GoogleTTSCookie)
+        </dt>
+
+        <dd>
+          @Html.EditorFor(model => model.GoogleTTSCookie)
+          @Html.ValidationMessageFor(model => model.GoogleTTSCookie)
+        </dd>
+
+        <dt>
+          @Html.DisplayNameFor(model => model.TTSStatus)
+        </dt>
+
+        <dd>
+          @Html.DisplayFor(model => model.TTSStatus)
+        </dd>
+
+        <input type="submit" name="StartTTS" value="Start TTS" 
+          @{ if(Model.IsTTSStarted) 
+            { @: disabled="disabled" 
+            } 
+          } />
+      }
+    }
+		if (TempData["warning"] == null)
+		{
+			@Html.ActionLink("Edit", "Edit", new { id = Model.Id })
+			@:|
+		}
+		else
+		{
+			@Html.Raw(TempData["warning"].ToString())
+			<br>
+		}
+	}
+	@Html.ActionLink("Back to List", "Index")
+	<form target="paypal" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+		<input type="hidden" name="cmd" value="_s-xclick">
+		@Html.Hidden("hosted_button_id", Model.PaypalButtonId)
+		<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_cart_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+		<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+	</form>
+	<form target="paypal" action="https://www.paypal.com/cgi-bin/webscr" method="post">
+		<input type="hidden" name="cmd" value="_s-xclick">
+		<input type="hidden" name="encrypted" value="-----BEGIN PKCS7-----MIIG1QYJKoZIhvcNAQcEoIIGxjCCBsICAQExggEwMIIBLAIBADCBlDCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb20CAQAwDQYJKoZIhvcNAQEBBQAEgYCulXzUeBuLxFQW0zhM6fUtXd7eMWXNjy8kP34v3uSQ1XmN9KkWBagsj33cvRZRy3BJc9RyQLka/S+/cEXHxombTJVJypk3ktcIX0L6oPicgGZdO06xQ5aa3U04zLt3G7VstLq1QS/kdqEJOFQJMoKmTng5fCPqGiWS7+++K6otGzELMAkGBSsOAwIaBQAwUwYJKoZIhvcNAQcBMBQGCCqGSIb3DQMHBAiEEgM2jb4tAIAw4EguWyJimlwp0GjlCmQ1Nkj6cUM46nRow3EqZ3+WtotIueXAMZjYsJzOhecTLEEgoIIDhzCCA4MwggLsoAMCAQICAQAwDQYJKoZIhvcNAQEFBQAwgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMB4XDTA0MDIxMzEwMTMxNVoXDTM1MDIxMzEwMTMxNVowgY4xCzAJBgNVBAYTAlVTMQswCQYDVQQIEwJDQTEWMBQGA1UEBxMNTW91bnRhaW4gVmlldzEUMBIGA1UEChMLUGF5UGFsIEluYy4xEzARBgNVBAsUCmxpdmVfY2VydHMxETAPBgNVBAMUCGxpdmVfYXBpMRwwGgYJKoZIhvcNAQkBFg1yZUBwYXlwYWwuY29tMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBR07d/ETMS1ycjtkpkvjXZe9k+6CieLuLsPumsJ7QC1odNz3sJiCbs2wC0nLE0uLGaEtXynIgRqIddYCHx88pb5HTXv4SZeuv0Rqq4+axW9PLAAATU8w04qqjaSXgbGLP3NmohqM6bV9kZZwZLR/klDaQGo1u9uDb9lr4Yn+rBQIDAQABo4HuMIHrMB0GA1UdDgQWBBSWn3y7xm8XvVk/UtcKG+wQ1mSUazCBuwYDVR0jBIGzMIGwgBSWn3y7xm8XvVk/UtcKG+wQ1mSUa6GBlKSBkTCBjjELMAkGA1UEBhMCVVMxCzAJBgNVBAgTAkNBMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MRQwEgYDVQQKEwtQYXlQYWwgSW5jLjETMBEGA1UECxQKbGl2ZV9jZXJ0czERMA8GA1UEAxQIbGl2ZV9hcGkxHDAaBgkqhkiG9w0BCQEWDXJlQHBheXBhbC5jb22CAQAwDAYDVR0TBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOBgQCBXzpWmoBa5e9fo6ujionW1hUhPkOBakTr3YCDjbYfvJEiv/2P+IobhOGJr85+XHhN0v4gUkEDI8r2/rNk1m0GA8HKddvTjyGw/XqXa+LSTlDYkqI8OwR8GEYj4efEtcRpRYBxV8KxAW93YDWzFGvruKnnLbDAF6VR5w/cCMn5hzGCAZowggGWAgEBMIGUMIGOMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0ExFjAUBgNVBAcTDU1vdW50YWluIFZpZXcxFDASBgNVBAoTC1BheVBhbCBJbmMuMRMwEQYDVQQLFApsaXZlX2NlcnRzMREwDwYDVQQDFAhsaXZlX2FwaTEcMBoGCSqGSIb3DQEJARYNcmVAcGF5cGFsLmNvbQIBADAJBgUrDgMCGgUAoF0wGAYJKoZIhvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTQxMDE4MjM0NzE0WjAjBgkqhkiG9w0BCQQxFgQUJTzBCkMbaeLzcuBFMbshWLw79AAwDQYJKoZIhvcNAQEBBQAEgYBT8DSfM+iVSfIWSTeCNl0WYQO9otbSsPlca+d0t3MeVQYECJgrhf7vaenr3Rt56qeEDKugpg+7y2/Dw1IuhaSx3uorogBGwp6mSgKDprwKTKphX63RQRHSlv8oMjKRhQhdzJZPj5wBIhZAnI4AgiZXmp+ht2qmOrhcvXZ3VTpJHg==-----END PKCS7-----">
+		<input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_viewcart_LG.gif" border="0" name="submit" alt="PayPal - The safer, easier way to pay online!">
+		<img alt="" border="0" src="https://www.paypalobjects.com/en_US/i/scr/pixel.gif" width="1" height="1">
+	</form>
+
+</p>

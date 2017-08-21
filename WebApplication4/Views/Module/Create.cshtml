@@ -1,0 +1,136 @@
+﻿@model WebApplication4.Controllers.CreateViewModel
+
+@{
+  ViewBag.Title = "Create";
+}
+
+<h2>Create</h2>
+
+@using (Html.BeginForm("Create", "Module", FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+  @Html.AntiForgeryToken()
+
+  <div class="form-horizontal">
+    @Html.ValidationSummary(true)
+
+    @Html.Label("optional module icon, max 300x300 pixels:", new { @class = "control-label" })
+    <input type="file" id="fileToUpload" name="file" />
+    <span class="field-validation-error" id="spanfile"></span>
+    <br />
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.Name, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.Name)
+        @Html.ValidationMessageFor(model => model.Name)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.ForeignName, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.ForeignName)
+        @Html.ValidationMessageFor(model => model.ForeignName)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.Description, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.TextAreaFor(model => model.Description, 5, 200, null)
+        @Html.ValidationMessageFor(model => model.Description)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.ForeignDescription, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.TextAreaFor(model => model.ForeignDescription, 5, 200, null)
+        @Html.ValidationMessageFor(model => model.ForeignDescription)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.Price, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.Price)
+        @Html.ValidationMessageFor(model => model.Price)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.NativeLang, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.DropDownListFor(model => model.NativeLang, Model.NativeLangList)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.ForeignLang, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.DropDownListFor(model => model.ForeignLang, Model.ForeignLangList)
+      </div>
+    </div>
+
+    <div class="form-group">
+      @Html.LabelFor(model => model.Text, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.TextAreaFor(model => model.Text, 20, 200, null)
+        @Html.ValidationMessageFor(model => model.Text)
+      </div>
+    </div>
+
+    <hr />
+    <label>If your module uses languages that are not listed here, specify the code and translated name of the new language(s). You can also provide translations of UI elements to be displayed in Tutor mobile application. Just replace the english/spanish example translations with your own. These new language definitions are optional.</label>
+    <div class="form-group">
+      @Html.LabelFor(model => model.NewNativeLangCode, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.NewNativeLangCode)
+        @Html.ValidationMessageFor(model => model.NewNativeLangCode)
+      </div>
+    </div>
+    <div class="form-group">
+      @Html.LabelFor(model => model.NewNativeLangName, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.NewNativeLangName)
+        @Html.ValidationMessageFor(model => model.NewNativeLangName)
+      </div>
+    </div>
+    <div class="form-group">
+      @Html.LabelFor(model => model.NewForeignLangCode, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.NewForeignLangCode)
+        @Html.ValidationMessageFor(model => model.NewForeignLangCode)
+      </div>
+    </div>
+    <div class="form-group">
+      @Html.LabelFor(model => model.NewForeignLangName, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.EditorFor(model => model.NewForeignLangName)
+        @Html.ValidationMessageFor(model => model.NewForeignLangName)
+      </div>
+    </div>
+    <div class="form-group">
+      @Html.LabelFor(model => model.TransUILabels, new { @class = "control-label col-md-2" })
+      <div class="col-md-10">
+        @Html.TextAreaFor(model => model.TransUILabels, 20, 200, null)
+        @Html.ValidationMessageFor(model => model.TransUILabels)
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-md-offset-2 col-md-10">
+        <input type="submit" value="Create" class="btn btn-default" />
+      </div>
+    </div>
+  </div>
+}
+
+
+<div>
+  @Html.ActionLink("Back to List", "Index")
+</div>
+
+@section Scripts {
+  @Scripts.Render("~/bundles/jqueryval")
+}

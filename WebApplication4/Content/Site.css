@@ -40,3 +40,6 @@ input[type="checkbox"].input-validation-error {
 .validation-summary-valid {
     display: none;
 }
+
+ol li{ list-style: none; } 
+ol li i{ margin-right: 12px; cursor: pointer } 

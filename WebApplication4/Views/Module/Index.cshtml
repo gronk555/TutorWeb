@@ -15,7 +15,7 @@
 	@Html.DisplayNameFor(model => model.OrderBy)
 	@Html.DropDownListFor(model => model.OrderBy, new SelectList(new List<string>() { "Newest first", "Name (a-z)", "Name (z-a)", "Price (hi-low)", "Price (low-hi)", "Popular first", "Popular last" }), null, new { onchange = "submit();" })
 }
-
+<i class="fa fa-play-circle" aria-hidden="true"></i>
 <p>
 	@Html.ActionLink("Create New", "Create")
 </p>

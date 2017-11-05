@@ -231,6 +231,7 @@
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
     <Content Include="Content\Upload\lds-audio-book.jpeg" />
+    <Content Include="Scripts\jquery.ba-throttle-debounce.min.js" />
     <Content Include="Views\Module\Edit.js" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\fontawesome-webfont.svg" />

@@ -917,9 +917,9 @@ namespace WebApplication4.Controllers
     public string NewForeignLangName { get; set; }
     public string TransUILabels { get; set; }
 
-    /// <summary>if we use translate.google.com tts, then we have to pass the cookie</summary>
+    /// <summary>if we use translate.google.com tts, then we have to pass the cookie TODO: remove?</summary>
     public string GoogleTTSCookie { get; set; }
-    /// <summary>Number of phrases converted to sound, total, state, e.g. "14/1000 Running..." or "14/1000 Cookie expired..."</summary>
+    /// <summary>Number of phrases converted to sound, total, state, e.g. "14/1000 Running..." or "14/1000 Cookie expired..."  TODO: remove?</summary>
     public string TTSStatus { get; set; }
     public bool IsTTSStarted { get; set; }
   }

@@ -88,7 +88,6 @@ function appendTextToRow(row, text) {
 
 function shiftRowsDown(e) {
   debugger;
-  //TODO: if last 4 rows are not all empty
   addPhraseTemplate();
   var text = getTextAroundCursor();
   var prevText = text.before;
@@ -119,6 +118,7 @@ function shiftRowsUp(curRow) {
 function addPhraseTemplate() {
   var rowCnt = $('table#module-table tr').length;
   var res = "";
+  // if last 4 rows are not all empty, then append new phrase
   for (i = 1; i <= 4; i++) {
     var row = $("table#module-table").find('tr').eq(rowCnt - i);
     res += row.children().last().text();
@@ -178,6 +178,13 @@ function removeIfEmpty(row) {
   if (res == "")
     for (i = 3; i >= 0; i--) {
       var row = $("table#module-table").find('tr').eq(phraseIndex * 4 + i);
+      if ($(document.activeElement)[0] == row.children().last()[0]) // if the row about to be deleted has focus, then move focus to the last remaining row
+      {
+        var lastRow = $("table#module-table").find('tr').eq(phraseIndex * 4 - 1);
+        var lastElemTextLength = lastRow.children().last().text().length;
+        setCursorAtPos(lastRow, lastElemTextLength)
+        lastRow.children().last().focus();
+      }
       row.remove();
     }
 }

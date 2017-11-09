@@ -129,7 +129,7 @@
   }
 
   function addPhraseTemplate() {
-    var rowCnt = module.find('tr').length;//$('table#module-table tr').length;
+    var rowCnt = module.find('tr').length;
     var res = "";
     // if last 4 rows are not all empty, then append new phrase
     for (i = 1; i <= 4; i++) {

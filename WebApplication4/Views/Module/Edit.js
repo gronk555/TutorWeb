@@ -1,5 +1,6 @@
 ﻿$(() => {
   var module = null;
+  var reader = new FileReader();
 
   function onDocumentReady() {
     module = $("table#module-table")
@@ -8,6 +9,7 @@
 
   $(document)
     .ready(onDocumentReady)
+    .on("change", "#input", e => { startReadingFile(e); })
     .on("change", "[name='NativeLang']", () => { updateNativeLangInText(); })
     .on("change", "[name='ForeignLang']", () => { updateForeignLangInText(); })
     .on("input", '[contenteditable]', $.debounce(2000, () => { /*TODO: save edited line to backend*/ }))
@@ -65,6 +67,20 @@
       playSelected(e);
     })
 
+  reader.onload = e => {
+    var lines = e.target.result.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
+    for (var i = 0; i < lines.length; i++) {
+      var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
+      curRow.children().last().text(lines[i]);
+    }
+  };
+
+  function startReadingFile(e) {
+    debugger;
+    var file = e.target.files[0];
+    reader.readAsText(file);
+  }
+
   function jumpPrevLine(e) {
     var curRow = $(e.target.parentNode);
     if (curRow.is(':first-child')) return null;
@@ -107,7 +123,7 @@
     var curText = text.after;
     var nextRow = $(e.target.parentNode).next();
     $(e.target).text(prevText);
-    while (nextRow.length == 1) { // TODO: == 1?
+    while (nextRow.length) {
       var tmpText = nextRow.children().last().text();
       nextRow.children().last().text(curText);
       curText = tmpText;
@@ -136,8 +152,11 @@
       var row = module.find('tr').eq(rowCnt - i);
       res += row.children().last().text();
     }
-    if (rowCnt == 0 || res != "")
+    if (rowCnt == 0 || res != "") {
       module.append($("#phrase-template").html());
+      rowCnt += 4;
+    }
+    return module.find('tr').eq(rowCnt - 4); // 1st row of the last phrase
   }
 
   function clearModuleTable() {

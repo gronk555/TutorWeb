@@ -5,14 +5,24 @@
   function onDocumentReady() {
     module = $("table#module-table")
     addPhraseTemplate();
+    module
+      .on("dragover", false)
+      .on("dragenter", false)
+      .on("drop", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        var file = e.originalEvent.dataTransfer.files[0];
+        startReadingFile(file);
+      });
   }
 
   $(document)
     .ready(onDocumentReady)
-    .on("change", "#input", e => { startReadingFile(e); })
+    .on('click', '#delete_all', () => { clearModuleTable(); })
+    .on("change", "#file-input", e => { startReadingFile(e.target.files[0]); })
     .on("change", "[name='NativeLang']", () => { updateNativeLangInText(); })
     .on("change", "[name='ForeignLang']", () => { updateForeignLangInText(); })
-    .on("input", '[contenteditable]', $.debounce(2000, () => { /*TODO: save edited line to backend*/ }))
+    .on("input", '[contenteditable]', $.debounce(2000, (e) => { console.log(e)/*TODO: save edited line to backend*/ }))
     .on('paste', '[contenteditable]', e => {
       //strips html tags added to the editable tag when pasting
       var $self = $(e.target);
@@ -65,19 +75,40 @@
     })
     .on("click", "i.fa-play", e => {
       playSelected(e);
-    })
-
+    });
+  
   reader.onload = e => {
-    var lines = e.target.result.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
+    populateModule(e.target.result);
+  };
+
+  function populateModule(text) {
+    var lines = text.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
     for (var i = 0; i < lines.length; i++) {
+      //TODO: get line index where cursor is, calculate index from where to insert new PhraseTemplate, insert phrase, put lines[i] in it
       var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
       curRow.children().last().text(lines[i]);
     }
-  };
+  }
 
-  function startReadingFile(e) {
+  function fileSize(b) {
+    var u = 0, s=1024;
+    while (b >= s || -b >= s) {
+      b /= s;
+      u++;
+    }
+    return (u ? b.toFixed(1) + ' ' : b) + ' KMGTPEZY'[u] + 'B';
+  }
+
+  function startReadingFile(file) {
     debugger;
-    var file = e.target.files[0];
+    if (file.size > 1000000) {
+      alert(`File is too big (${fileSize(file.size)}), max size is 1MB.`);
+      return;
+    }
+    if (file.type != "text/plain" && file.type != "text/html") {
+      alert(`Invalid file format${file.type == "" ? "" : ` (${file.type})`}, must be text or html.`);
+      return;
+    }
     reader.readAsText(file);
   }
 
@@ -161,6 +192,7 @@
 
   function clearModuleTable() {
     module.html("");
+    addPhraseTemplate();
   }
 
   function updateNativeLangInText() {
@@ -178,15 +210,12 @@
   }
 
   function playSelected(e) {
-    alert(e);
-    var sel = window.getSelection();
-    var range = sel.getRangeAt(0);
-    var pointedTag = range.startContainer.parentNode;
-
-    var fname = "../../Sounds/" + e.target.parentElement.innerText + ".mp3";
+    debugger;
+    var text = e.target.parentElement.parentElement.lastElementChild.textContent;
+    if ($.trim(text).length == 0) return;
+    var fname = "../../Sounds/" + text + ".mp3";
     var audio = document.createElement('audio');
     audio.setAttribute('src', fname);
-
     audio.addEventListener("canplaythrough", () => {
       audio.play();
     });

@@ -86,34 +86,42 @@
       </div>
     </div>
 
-    <input type="file" id="input">
+    <input type="file" id="file-input">
 
     <script id="phrase-template" type="text/x-phrase-template">
       <tr>
-        <td>@Model.NativeLang</td>
-        <td><i class="fa fa-play"></i></td>
+        <td title="Here must be a phrase in native language">@Model.NativeLang</td>
+        <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="example text ..."></td>
       </tr>
       <tr>
-        <td>@Model.ForeignLang</td>
-        <td><i class="fa fa-play"></i></td>
+        <td title="Here must be the phrase in foreign language">@Model.ForeignLang</td>
+        <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="ejemplo de texto ..."></td>
       </tr>
       <tr>
-        <td>@Model.NativeLang</td>
-        <td><i class="fa fa-play"></i></td>
+        <td title="Here must be a helping message in native language">@Model.NativeLang</td>
+        <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="example of explanation ..."></td>
       </tr>
       <tr>
-        <td><i class="fa fa-link"></i></td>
-        <td><i class="fa fa-play"></i></td>
+        <td title="Here must be a link to site with demo of the phrases"><i class="fa fa-link"></i></td>
+        <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="www.example.link.com"></td>
       </tr>
     </script>
 
     <div class="module-div">
-      <table id="module-table">
-      </table>
+      <table id="module-table"></table>
+    </div>
+
+    <div class="row">
+      <div class="col-xs-6 col-sm-6 col-md-6 text-left">
+        @Html.ActionLink("Download as text file", "GetModuleText")
+      </div>
+      <div class="col-xs-6 col-sm-6 col-md-6 text-right">
+        <a id="delete_all" href="javascript:void(0);">Delete all</a>
+      </div>
     </div>
 
     @if (Model.IsAdmin)

@@ -18,6 +18,7 @@
 
   $(document)
     .ready(onDocumentReady)
+    .on("click", "#save_as_file", () => downloadModuleText())
     .on('click', '#delete_all', () => { clearModuleTable(); })
     .on("change", "#file-input", e => { startReadingFile(e.target.files[0]); })
     .on("change", "[name='NativeLang']", () => { updateNativeLangInText(); })
@@ -249,6 +250,24 @@
         }
         row.remove();
       }
+  }
+
+  function downloadModuleText() {
+    if (!$("#Name").val()) {
+      alert("Fill out the Name, please.");
+      $("#Name").focus();
+      return false;
+    }
+    var text = "";
+    module.find("tr").each((i, row) => {
+      text += $(row).children().last().text() + "\r\n";
+    });
+    text = text.slice(0,-2); // remove last 2 chars
+    var blob = new Blob([text], { "type": "text/plain" });
+    $("#save_as_file")[0].download = $("#Name").val() + ".txt"; // get module name
+    var url = URL.createObjectURL(blob);
+    $("#save_as_file")[0].href = url;
+    setTimeout(() => URL.revokeObjectURL(url), 0); // TODO: test it with large data: do we have mem leaks? does data stay even if blob is gone?
   }
 
 });

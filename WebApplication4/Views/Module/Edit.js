@@ -1,6 +1,7 @@
 ﻿$(() => {
   var module = null;
   var reader = new FileReader();
+  const MAX_FILE_SIZE = 2000000;
 
   function onDocumentReady() {
     module = $("table#module-table")
@@ -19,15 +20,15 @@
   $(document)
     .ready(onDocumentReady)
     .on("click", "#save_as_file", () => downloadModuleText())
-    .on('click', '#delete_all', () => { clearModuleTable(); })
-    .on("change", "#file-input", e => { startReadingFile(e.target.files[0]); })
-    .on("change", "[name='NativeLang']", () => { updateNativeLangInText(); })
-    .on("change", "[name='ForeignLang']", () => { updateForeignLangInText(); })
-    .on("input", '[contenteditable]', $.debounce(2000, (e) => { console.log(e)/*TODO: save edited line to backend*/ }))
+    .on('click', '#delete_all', () => clearModuleTable())
+    .on("change", "#file-input", e => startReadingFile(e.target.files[0]))
+    .on("change", "[name='NativeLang']", () => updateNativeLangInText())
+    .on("change", "[name='ForeignLang']", () => updateForeignLangInText())
+    .on("input", '[contenteditable]', e => onRowChanged(e)) // TODO: test IE, if input is not fired, add blur keyup paste 
     .on('paste', '[contenteditable]', e => {
       //strips html tags added to the editable tag when pasting
       var $self = $(e.target);
-      setTimeout(() => { $self.html($self.text()); }, 0);
+      setTimeout(() => { $self.html($self.text()); }, 0); // input event will fire as well
     })
     .on('keydown', '[contenteditable]', e => {
       var text = getTextAroundCursor();
@@ -82,6 +83,49 @@
     populateModule(e.target.result);
   };
 
+  var db = _.debounce(() => saveModuleText(), 3000);
+  function onRowChanged(e) {
+    var curRow = $(e.target.parentNode);
+    curRow.addClass("dirty");
+    db();
+  }
+
+  // save all edited rows to backend
+  function saveModuleText() {
+    console.log('a');
+    var moduleName = $("#Name").val();
+    if (!moduleName) {
+      alert("Fill out the Name, please.");
+      $("#Name").focus();
+      return false;
+    }
+    var totalRowCnt = module.find("tr").length;
+    var dirtyRows = module
+      .find("tr.dirty")
+      .map((i, e) => {
+        return {
+          iRow: e.rowIndex,
+          value: $(e).children().last().text()
+        };
+      })
+      .toArray();
+    var param = {
+      ModuleName: moduleName,
+      TotalRowCnt: totalRowCnt,
+      DirtyRows: dirtyRows
+    };
+    var strData = JSON.stringify(param);
+    $.ajax({
+      url: route,
+      method: "POST",
+      data: "{ 'param': '" + strData + "' }",
+      contentType: "application/json; charset=utf-8", //data param type
+      dataType: "json" //return type
+    })
+    .done((data) => {})
+    .fail((err) => {});
+  }
+
   function populateModule(text) {
     var lines = text.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
     for (var i = 0; i < lines.length; i++) {
@@ -101,9 +145,8 @@
   }
 
   function startReadingFile(file) {
-    debugger;
-    if (file.size > 1000000) {
-      alert(`File is too big (${fileSize(file.size)}), max size is 1MB.`);
+    if (file.size > MAX_FILE_SIZE) {
+      alert(`File is too big (${fileSize(file.size)}), max size is ${fileSize(MAX_FILE_SIZE)}.`);
       return;
     }
     if (file.type != "text/plain" && file.type != "text/html") {
@@ -148,7 +191,6 @@
   }
 
   function shiftRowsDown(e) {
-    debugger;
     addPhraseTemplate();
     var text = getTextAroundCursor();
     var prevText = text.before;

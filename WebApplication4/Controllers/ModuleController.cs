@@ -41,7 +41,7 @@ namespace WebApplication4.Controllers
 {
   public class ModuleController : Controller
   {
-    private Entities db = new Entities();
+    private Entities db = new Entities(); //TODO: probably more efficient to create inside api methods that use it
 
     public class Phrase
     {
@@ -467,6 +467,20 @@ namespace WebApplication4.Controllers
       }
       return View(vm);
     }
+
+    [HttpPost]
+    [Authorize]
+    public JsonResult SaveModuleText(string param)
+    {
+      var o = JObject.Parse(param);
+      //Console.WriteLine(s);
+      return Json("SaveModuleText");
+    }
+
+
+
+
+
 
     //[HttpPost]
     //public ActionResult StartTTS([Bind(Include = "Id,Name,GoogleTTSCookie", Exclude = "SoldNumber,UserId")] CreateViewModel vm)
@@ -957,5 +971,12 @@ namespace WebApplication4.Controllers
     public string NewForeignLangCode;
     public string NewForeignLangName;
     public string TransUILabels;
+  }
+
+  public class ModuleTextUpdate
+  {
+    public string ModuleName;
+    //public int TotalRowCnt;
+    //public List<object> DirtyRows;
   }
 }

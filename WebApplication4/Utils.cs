@@ -21,60 +21,63 @@ namespace WebApplication4
     }
 
     /// <summary>map of module name to all its rows, for all modules currently being edited</summary>
-    public static ConcurrentDictionary<string, CachedModule> ModuleCache = new ConcurrentDictionary<string, CachedModule>();
+    private static ConcurrentDictionary<int, CachedModule> moduleCache = new ConcurrentDictionary<int, CachedModule>();
 
     /// <summary>called from controller only, when a module is open for editing, or created new</summary>
-    /// <param name="moduleName"></param>
+    /// <param name="moduleId"></param>
     /// <param name="db">db context passed from controller, must exist because controller creates it for every request</param>
     /// <returns>true if module exists in db</returns>
-    public static bool PopulateModuleCache(string moduleName, Entities db)
+    public static bool PopulateModuleCache(int moduleId, Entities db)
     {
-      if (ModuleCache.Keys.Contains(moduleName)) return true;
-      Module m = db.Modules.FirstOrDefault(o => o.Name == moduleName);
+      if (moduleCache.Keys.Contains(moduleId)) return true;
+      Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId);
       if (m == null) return false;
       var cm = new CachedModule(); // read module from db into the dict
       cm.Rows = string.IsNullOrWhiteSpace(m.Text) ? cm.Rows : m.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).ToList();
-      ModuleCache[moduleName] = cm;
+      moduleCache[moduleId] = cm;
       return true;
     }
 
     /// <summary>called from SaveModuleText api</summary>
-    /// <param name="moduleName"></param>
+    /// <param name="moduleId"></param>
     /// <param name="totalRowCnt">if total row count in edited module is less than in saved module, then delete all extra rows from saved module</param>
     /// <param name="dirtyRows">modified rows in edited module</param>
-    public static void UpdateModuleCache(string moduleName, int totalRowCnt, List<Tuple<int, string>> dirtyRows)
+    public static void UpdateModuleCache(int moduleId, int totalRowCnt, List<Tuple<int, string>> dirtyRows)
     {
-      var cm = ModuleCache[moduleName];
-      cm.IsDirty = true;
+      var cm = moduleCache[moduleId];
       if (totalRowCnt < cm.Rows.Count)
         cm.Rows.RemoveRange(totalRowCnt, int.MaxValue);
-      dirtyRows.ForEach(t => cm.Rows[t.Item1] = t.Item2);
+      dirtyRows.ForEach(t => cm.Rows[t.Item1] = t.Item2); // TODO: if Item1 - row index - is greater than Rows.Count, then?
+      cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
     }
 
     /// <summary>
     /// called from agent callback every N mins, also from Application_End, and when user closes module editor
     /// </summary>
-    /// <param name="moduleName">if null or not passed, we flush all dirty modules to db</param>
+    /// <param name="moduleId">if null or not passed, we flush all dirty modules to db</param>
     /// <param name="db">db context created in the agent for just one task, or in the controller, and passed here</param>
     /// <returns>true if module exists</returns>
-    public static bool FlushModuleCache(Entities db, string moduleName = null)
+    /// <remarks>probably it is safe in the way, that with short timer interval we'll have multiple threads running this method in AgentCallback, 
+    /// and it will distribute work evenly among them, so it will finish faster that using one thread</remarks>
+    public static bool FlushModuleCache(Entities db, int moduleId = 0)
     {
-      if (string.IsNullOrWhiteSpace(moduleName))
+      if (moduleId == 0)
       {
-        foreach (var cm in ModuleCache) FlushModuleCache(db, cm.Key);
+        foreach (var cm in moduleCache) FlushModuleCache(db, cm.Key);
+        return true;
       }
       try
       {
-        if (!ModuleCache[moduleName].IsDirty) return true; // skip unmodified modules, also skips modules currently being saved by other threads
-        Module m = db.Modules.FirstOrDefault(o => o.Name == moduleName);
+        if (!moduleCache[moduleId].IsDirty) return true; // skip unmodified modules, also skips modules currently being saved by other threads
+        Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId);
         if (m == null) return false;
-        m.Text = string.Join("\r\n", ModuleCache[moduleName].Rows);
-        ModuleCache[moduleName].IsDirty = false; // to prevent other threads from saving this module again while current thread is still doing it
+        m.Text = string.Join("\r\n", moduleCache[moduleId].Rows);
+        moduleCache[moduleId].IsDirty = false; // to prevent other threads from saving this module again while current thread is still doing it
         db.SaveChanges(); // this can take long
       }
       catch
       {
-        ModuleCache[moduleName].IsDirty = true; 
+        moduleCache[moduleId].IsDirty = true; 
         return false;
       }
       return true;
@@ -86,18 +89,18 @@ namespace WebApplication4
     /// <param name="state"></param>
     public static void AgentCallback(object state)
     {
-      Entities db = new Entities();
+      Entities db = new Entities();  // must be separate instance for each thread
       FlushModuleCache(db);
     }
 
     /// <summary>
     /// called from module index if admin or author deletes the module
     /// </summary>
-    /// <param name="moduleName"></param>
-    public static void DeleteModuleCache(string moduleName = null)
+    /// <param name="moduleId"></param>
+    public static void DeleteModuleCache(int moduleId = 0)
     {
       CachedModule m = null;
-      ModuleCache.TryRemove(moduleName, out m);
+      moduleCache.TryRemove(moduleId, out m);
     }
 
     //we start agent timer in Global.asax.cs with task to flush module cache every 2 mins

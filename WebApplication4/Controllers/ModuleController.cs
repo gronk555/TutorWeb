@@ -340,9 +340,13 @@ namespace WebApplication4.Controllers
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize]
-    public ActionResult Create([Bind(Include = "Id,Name,Description,Price,NativeLang,ForeignLang,Text", Exclude = "SoldNumber,UserId")] CreateViewModel vm, HttpPostedFileBase file)
+    public ActionResult Create([Bind(Include = "Id,Name,Description,Price,NativeLang,ForeignLang,Text,ForeignName,ForeignDescription", Exclude = "SoldNumber,UserId")] CreateViewModel vm, HttpPostedFileBase file)
     {
       if (User.Identity.Name == null) return RedirectToAction("Index");//must be logged in to create/edit/delete
+      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
+      vm.ForeignLangList = new SelectList(l, "LangCode", "LangName");
+      vm.NativeLangList = new SelectList(l, "LangCode", "LangName");
+      vm.TransUILabels = transUILabelsTemplate;
       if (ModelState.IsValid)
       {
         Module m = new Module()
@@ -367,6 +371,7 @@ namespace WebApplication4.Controllers
         m.Name += "_" + m.Id; //append unique suffix
         m.ImageFileName = SaveFile(m.Id, file);
         db.SaveChanges();
+        Utils.PopulateModuleCache(m.Id, db); // if module is successfully created, then prepare cache for editor
         return RedirectToAction("Index");
       }
       return View(vm);
@@ -418,6 +423,8 @@ namespace WebApplication4.Controllers
         NewForeignLangName = m.NewForeignLangName,
         TransUILabels = m.TransUILabels ?? transUILabelsTemplate //if module have some lang defined, put it here, otherwise, put a template
       };
+      Utils.PopulateModuleCache(m.Id, db); // if module is open for editing, then prepare cache for editor
+      //TODO: populate fancy editor TUTOR-20, do it in cshtml js
       return View(vm);
     }
 
@@ -453,7 +460,7 @@ namespace WebApplication4.Controllers
         m.NewForeignLangCode = vm.NewForeignLangCode;
         m.NewForeignLangName = vm.NewForeignLangName;
         m.TransUILabels = vm.TransUILabels;
-        m.Name = vm.Name += "_" + vm.Id; //append unique suffix
+        m.Name = vm.Name += "_" + vm.Id; //append unique suffix      TODO: if you change name of existing module, then update ModuleCache, since the name is used as a key there, or better, use module Id instead as a key
         m.ForeignName = vm.ForeignName;
         m.Description = vm.Description;
         m.ForeignDescription = vm.ForeignDescription;
@@ -473,8 +480,15 @@ namespace WebApplication4.Controllers
     public JsonResult SaveModuleText(string param)
     {
       var o = JObject.Parse(param);
+      var list = o["DirtyRows"].Select(x => new Tuple<int, string>(Int32.Parse(x["iRow"].ToString()), x["value"].ToString())).ToList();
+      Utils.UpdateModuleCache(o["ModuleId"].ToObject<int>(), o["TotalRowCnt"].ToObject<int>(), list);
       //Console.WriteLine(s);
       return Json("SaveModuleText");
+      //  var param = {
+      //  moduleId: moduleId,
+      //  TotalRowCnt: totalRowCnt,
+      //  DirtyRows: dirtyRows
+      //};
     }
 
 
@@ -975,7 +989,7 @@ namespace WebApplication4.Controllers
 
   public class ModuleTextUpdate
   {
-    public string ModuleName;
+    public string ModuleName; //TODO: do we need it?
     //public int TotalRowCnt;
     //public List<object> DirtyRows;
   }

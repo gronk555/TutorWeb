@@ -424,7 +424,6 @@ namespace WebApplication4.Controllers
         TransUILabels = m.TransUILabels ?? transUILabelsTemplate //if module have some lang defined, put it here, otherwise, put a template
       };
       Utils.PopulateModuleCache(m.Id, db); // if module is open for editing, then prepare cache for editor
-      //TODO: populate fancy editor TUTOR-20, do it in cshtml js
       return View(vm);
     }
 
@@ -460,14 +459,13 @@ namespace WebApplication4.Controllers
         m.NewForeignLangCode = vm.NewForeignLangCode;
         m.NewForeignLangName = vm.NewForeignLangName;
         m.TransUILabels = vm.TransUILabels;
-        m.Name = vm.Name += "_" + vm.Id; //append unique suffix      TODO: if you change name of existing module, then update ModuleCache, since the name is used as a key there, or better, use module Id instead as a key
+        m.Name = vm.Name += "_" + vm.Id; //append unique suffix
         m.ForeignName = vm.ForeignName;
         m.Description = vm.Description;
         m.ForeignDescription = vm.ForeignDescription;
         m.ForeignLang = vm.ForeignLang;
         m.NativeLang = vm.NativeLang;
         m.Price = vm.Price;
-        m.Text = vm.Text;    //TODO: remove all non-alfanumeric chars 
         m.Locked = vm.Locked;
         db.SaveChanges();
         return RedirectToAction("Index"); //on success return to index
@@ -475,6 +473,11 @@ namespace WebApplication4.Controllers
       return View(vm);
     }
 
+    /// <summary>
+    /// autosave, called from UI when editing
+    /// </summary>
+    /// <param name="param">{ ModuleId: int, TotalRowCnt: int, DirtyRows: {iRow: int, value: string}[] }</param>
+    /// <returns>empty string</returns>
     [HttpPost]
     [Authorize]
     public JsonResult SaveModuleText(string param)
@@ -482,13 +485,7 @@ namespace WebApplication4.Controllers
       var o = JObject.Parse(param);
       var list = o["DirtyRows"].Select(x => new Tuple<int, string>(Int32.Parse(x["iRow"].ToString()), x["value"].ToString())).ToList();
       Utils.UpdateModuleCache(o["ModuleId"].ToObject<int>(), o["TotalRowCnt"].ToObject<int>(), list);
-      //Console.WriteLine(s);
-      return Json("SaveModuleText");
-      //  var param = {
-      //  moduleId: moduleId,
-      //  TotalRowCnt: totalRowCnt,
-      //  DirtyRows: dirtyRows
-      //};
+      return Json("");
     }
 
 
@@ -987,10 +984,4 @@ namespace WebApplication4.Controllers
     public string TransUILabels;
   }
 
-  public class ModuleTextUpdate
-  {
-    public string ModuleName; //TODO: do we need it?
-    //public int TotalRowCnt;
-    //public List<object> DirtyRows;
-  }
 }

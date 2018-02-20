@@ -81,7 +81,6 @@
 
   var db = _.debounce(() => saveModuleText(), 3000);
   function onInput(curRow) { // when typing or pasting, clean the string of all illegal chars
-    //debugger;
     let txt = getTextAroundCursor();
     let cleanTextBefore = cleanString(txt.before);
     let cleanTextAfter = cleanString(txt.after);
@@ -90,7 +89,7 @@
     onRowChanged(curRow);
   }
 
-  function onRowChanged(curRow) { // TODO:  missing marked as dirty: rows shifted up or down, on enter, del, bksp, on drop, on delete all; cursor jumps to start of line!
+  function onRowChanged(curRow) {
     curRow.addClass("dirty");
     db();
   }
@@ -127,11 +126,9 @@
   }
 
   function populateModule(text) {
-    //debugger;
-    // TODO: remove all illegal chars from text!  This should also be done on paste, on file load, on key press, on drop
     var lines = text.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
     for (var i = 0; i < lines.length; i++) {
-      //TODO: get line index where cursor is, calculate index from where to insert new PhraseTemplate, insert phrase, put lines[i] in it
+      //append to the end of existing module text
       var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
       setText(curRow, cleanString(lines[i]));
     }
@@ -201,7 +198,6 @@
 
   function shiftRowsUp(curRow) {
     if (!curRow.length) return;
-    //debugger;
     var nextRow = curRow.next();
     while (nextRow.length) {
       setText(curRow, getText(nextRow));
@@ -247,7 +243,6 @@
   }
 
   function playSelected(e) {
-    //debugger;
     var text = e.target.parentElement.parentElement.lastElementChild.textContent;
     if ($.trim(text).length == 0) return;
     var fname = "../../Sounds/" + text + ".mp3";
@@ -302,7 +297,7 @@
     $("#save_as_file")[0].download = $("#Name").val() + ".txt"; // get module name
     var url = URL.createObjectURL(blob);
     $("#save_as_file")[0].href = url;
-    setTimeout(() => URL.revokeObjectURL(url), 0); // TODO: test it with large data: do we have mem leaks? does data stay even if blob is gone?
+    setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
   function cleanString(s) {
@@ -315,13 +310,7 @@
   }
 
   function getText(row) {
-    try{
-      return row.children().last().text();
-    }
-    catch (e)
-    { 
-      debugger;
-    }
+    return row.children().last().text();
   }
 
   function focusText(row) {

@@ -47,7 +47,9 @@ namespace WebApplication4
       var cm = moduleCache[moduleId];
       if (totalRowCnt < cm.Rows.Count)
         cm.Rows.RemoveRange(totalRowCnt, int.MaxValue);
-      dirtyRows.ForEach(t => cm.Rows[t.Item1] = t.Item2); // TODO: if Item1 - row index - is greater than Rows.Count, then?
+      else if (totalRowCnt > cm.Rows.Count)
+        cm.Rows.AddRange(new string[totalRowCnt - cm.Rows.Count]); // allocate for new rows
+      dirtyRows.ForEach(t => cm.Rows[t.Item1] = t.Item2); // copy all updated rows to cache
       cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
     }
 
@@ -69,10 +71,15 @@ namespace WebApplication4
       try
       {
         if (!moduleCache[moduleId].IsDirty) return true; // skip unmodified modules, also skips modules currently being saved by other threads
-        Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId);
-        if (m == null) return false;
-        m.Text = string.Join("\r\n", moduleCache[moduleId].Rows);
         moduleCache[moduleId].IsDirty = false; // to prevent other threads from saving this module again while current thread is still doing it
+        Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId);
+        if (m == null)
+        {
+          var val = new CachedModule();
+          moduleCache.TryRemove(moduleId, out val);
+          return false;
+        }
+        m.Text = string.Join("\r\n", moduleCache[moduleId].Rows);
         db.SaveChanges(); // this can take long
       }
       catch

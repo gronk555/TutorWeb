@@ -67,7 +67,16 @@ table {
 }
 
 .module-div tr td:nth-child(1), td:nth-child(2) {
-  width: 20px;
+  width: 50px;
+}
+
+.module-div tr td:nth-child(2) {
+  width: 17px;
+}
+
+input[type="checkbox"]
+{
+  vertical-align: top;
 }
 
 [contenteditable="true"]:active, [contenteditable="true"]:focus {

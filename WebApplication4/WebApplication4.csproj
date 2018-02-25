@@ -230,7 +230,6 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\font-awesome.css" />
     <Content Include="Content\font-awesome.min.css" />
-    <Content Include="Content\Upload\lds-audio-book.jpeg" />
     <Content Include="Scripts\jquery.ba-throttle-debounce.min.js" />
     <Content Include="Scripts\lodash.min.js" />
     <Content Include="Views\Module\Edit.js" />
@@ -313,7 +312,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />
-    <Folder Include="Content\TTS\" />
     <Folder Include="Sounds\" />
   </ItemGroup>
   <ItemGroup>

@@ -19,7 +19,7 @@ namespace WebApplication4
       BundleConfig.RegisterBundles(BundleTable.Bundles);
       
       //start agent timer with task to flush module cache every 2 mins
-      agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);      // TODO: test
+      agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);
     }
 
     protected void Application_End()

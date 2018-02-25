@@ -8,7 +8,6 @@ using System.Linq;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
-using System.Web.Routing;
 using WebApplication4.Models;
 using Microsoft.AspNet.Identity;
 using System.ComponentModel.DataAnnotations;
@@ -135,18 +134,47 @@ namespace WebApplication4.Controllers
     #endregion
 
 
-    //TODO: first check our own location, then  http://soundoftext.com/static/sounds/es/ , then a few more fallback sites
-    public static byte[] DownloadVoice(string text, string lang)
+    //TODO: first check our own location, then  https://api.soundoftext.com/sounds , then a few more fallback sites
+    /// <summary>
+    /// POST to https://api.soundoftext.com/sounds 
+    /// {
+    ///  "engine": "Google",
+    ///  "data": {
+    ///    "text": "Hello, world",
+    ///    "voice": "en-US"
+    ///  }
+    /// }
+    /// response: 
+    /// {success: true, id: "981684a0-15fa-11e8-9416-5382295fa6ae"}
+    /// GET https://api.soundoftext.com/sounds/981684a0-15fa-11e8-9416-5382295fa6ae
+    /// response:
+    /// {status: "Done", location:"https://soundoftext.nyc3.digitaloceanspaces.com/981684a0-15fa-11e8-9416-5382295fa6ae.mp3"}
+    /// GET https://soundoftext.nyc3.digitaloceanspaces.com/981684a0-15fa-11e8-9416-5382295fa6ae.mp3
+    /// 
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="lang">TODO: must be compliant with the list (case sensitive match!) https://soundoftext.com/docs#index </param>
+    public static void DownloadVoice(string text, string lang, string fileName)
     {
-      string GoogleTranslateUrl = "http://translate.google.com/translate_tts?tl={0}&q={1}"; //TODO: text length limit = 260, bc we store phrases as file names
       if (String.IsNullOrWhiteSpace(text) || String.IsNullOrWhiteSpace(lang))
-        return new byte[0];
-      string uri = String.Format(GoogleTranslateUrl, lang, text);
+        return;
+      var url = "https://api.soundoftext.com/sounds/";
       using (WebClient wc = new WebClient())
       {
-        wc.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 6.2; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36";
-        wc.Headers[HttpRequestHeader.Cookie] = "SID=DQAAAAgBAAC1kezm3GFmR37qgswR0kxSxxinL36HSEfOptM8ANkd79RQO65R_xgCZyMgMogUK5th2Hfq7K2WWuzpDCqQqRvlW7Fm0pamjZClf3AStZsoYN_hljSwjxAJt5238uqFksyi0fq82Ak4wyxNa_NPj7RvE0uu2DPzErU5MpeJ6C2LB6hHfuan7Xe8J8FXW1r9cs5Pqc19oYEF4I6y2PKSmfnVaC7kqU0ZMv2r82RvLPtzaK85f4mIhXBvZEc_wjuZFaEBV623s2vgfCRqXlRkVKrfaJDx0xPjp-8yPF3ObpLwX0eQFojiDc03_I1ce44kSjCNFXqzl4NUTv_NEc3Z3f5KiuHZlKuhN8IzMOy8aB-deQ; HSID=AFgSPJOot-k4NT9rU; APISID=b1v0Sk4zanwWpSAF/A0kQ5Irytk1r89GYm; __utmx=173272373.3AnMnZNSR6iJ8hF_-Ec65A$52618439-14:; __utmxx=173272373.3AnMnZNSR6iJ8hF_-Ec65A$52618439-14:1433708893:15552000; PREF=ID=1111111111111111:FF=0:LD=en:TM=1433708714:LM=1433708714:GM=1:S=nqQ53F3ZUsOoUm1A; _ga=GA1.3.645219687.1433712944; NID=70=XrDd61kONP0YnZL7Dw8kp7QqfRKNNtK2djjWImSHr-Aabdnr5_sYHem_mw0n7Yo3fRrCBnXYzN0ce1X8ms4vo4MZki9iegH2A79fiQH0PzrXFICkMyi0u_1_bTWBA3bOoR-5hZ87UfZqANuLXOyfK_np_lOSBgHE6x7y3oI; GOOGLE_ABUSE_EXEMPTION=ID=3fa4a76697d6e3dc:TM=1438456085:C=c:IP=209.195.86.104-:S=APGng0u4KAqxh7Li7LsA5uCIxGS2kGiimg";
-        return wc.DownloadData(uri);
+        var data = new
+        {
+          engine = "Google",
+          data = new
+          {
+            text = text,
+            voice = lang
+          }
+        };
+
+        wc.Headers[HttpRequestHeader.ContentType] = "application/json";
+        dynamic res = System.Web.Helpers.Json.Decode(wc.UploadString(url, "POST", JsonConvert.SerializeObject(data)));
+        res = System.Web.Helpers.Json.Decode(wc.DownloadString(url + res.id));
+        wc.DownloadFile(res.location, fileName);
       }
     }
 
@@ -483,9 +511,22 @@ namespace WebApplication4.Controllers
     public JsonResult SaveModuleText(string param)
     {
       var o = JObject.Parse(param);
-      var list = o["DirtyRows"].Select(x => new Tuple<int, string>(Int32.Parse(x["iRow"].ToString()), x["value"].ToString())).ToList();
+      var list = o["DirtyRows"].Select(x => new Tuple<int, string, string>(Int32.Parse(x["iRow"].ToString()), x["value"].ToString(), x["langCode"].ToString())).ToList();
       Utils.UpdateModuleCache(o["ModuleId"].ToObject<int>(), o["TotalRowCnt"].ToObject<int>(), list);
+
+      if ((bool)o["EnableTTS"]) // if TTS download is enabled
+        list.ForEach(row =>
+        {
+          var ttsPath = Server.MapPath("~/Content/TTS/");
+          var dir = Directory.CreateDirectory(Path.Combine(ttsPath, row.Item3)); // if lang is new, create a folder for it
+          var filePath = Path.Combine(dir.FullName, row.Item2 + ".mp3"); // row.Item2 = value
+          if (!System.IO.File.Exists(filePath))
+          {
+            DownloadVoice(row.Item2, row.Item3, filePath); // row.Item2 = value, row.Item3 = lang
+          }
+        });
       return Json("");
+      // TODO: collect TTS for all dirty rows, check if specified lang corresponds to row value
     }
 
 

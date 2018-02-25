@@ -4,7 +4,8 @@
   const MAX_FILE_SIZE = 2000000;
 
   function onDocumentReady() {
-    module = $("table#module-table")
+    module = $("table#module-table");
+    if (!module.length) return false; // wrong page, dont set up other event handlers
     addPhraseTemplate();
     populateModule(moduleText); // moduleText defined in Edit.cshtml
     module
@@ -34,17 +35,17 @@
         case 13: { //enter
           shiftRowsDown(curRow)
           let nextRow = jumpNextLine(curRow);
-          return false; // prevent standart behaviour
+          return false; // prevent standard behaviour
         }
         case 38: { //up
           var prevRow = jumpPrevLine(curRow);
           if (prevRow) setCursorAtPos(prevRow, text.before.length);
-          return false; // prevent standart behaviour
+          return false; // prevent standard behaviour
         }
         case 40: { //down
           var nextRow = jumpNextLine(curRow);
           setCursorAtPos(nextRow, text.before.length);
-          return false; // prevent standart behaviour
+          return false; // prevent standard behaviour
         }
         case 8: { //backspace
           if (text.before == "") { // if cursor is at start of row, then concat with previous
@@ -54,7 +55,7 @@
               setCursorAtPos(prevRow, getText(prevRow).length);
               shiftRowsUp(prevRow.next());
             }
-            return false; // prevent standart behaviour
+            return false; // prevent standard behaviour
           }
           break;
         }
@@ -64,7 +65,7 @@
             appendTextToRow(curRow, getText(nextRow));
             setCursorAtPos(curRow, text.before.length);
             shiftRowsUp(nextRow);
-            return false; // prevent standart behaviour
+            return false; // prevent standard behaviour
           }
           break;
         }
@@ -102,14 +103,16 @@
       .map((i, row) => {
         return {
           iRow: row.rowIndex,
-          value: getText($(row))
+          value: getText($(row)),
+          langCode: $(row).children().first().text()
         };
       })
       .toArray();
     var param = {
       ModuleId: moduleId,
       TotalRowCnt: totalRowCnt,
-      DirtyRows: dirtyRows
+      DirtyRows: dirtyRows,
+      EnableTTS: $("input#tts")[0].checked
     };
     var strData = JSON.stringify(param);
     $.ajax({
@@ -120,7 +123,7 @@
       dataType: "json" //return type
     })
     .done((data) => {      
-      module.find("tr.dirty").removeClass("dirty"); // clear dirty on all rows
+      clearAllDirty();
     })
     .fail((err) => {});
   }
@@ -132,6 +135,7 @@
       var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
       setText(curRow, cleanString(lines[i]));
     }
+    clearAllDirty();
   }
 
   function fileSize(b) {
@@ -244,8 +248,9 @@
 
   function playSelected(e) {
     var text = e.target.parentElement.parentElement.lastElementChild.textContent;
+    var lang = e.target.parentElement.parentElement.firstElementChild.textContent;
     if ($.trim(text).length == 0) return;
-    var fname = "../../Sounds/" + text + ".mp3";
+    var fname = "../../Content/TTS/" + lang + "/" + text + ".mp3";
     var audio = document.createElement('audio');
     audio.setAttribute('src', fname);
     audio.addEventListener("canplaythrough", () => {
@@ -321,6 +326,10 @@
     var input = row.children().last();
     input.text(input.text() + text);
     onRowChanged(row);
+  }
+
+  function clearAllDirty(row) {
+    module.find("tr.dirty").removeClass("dirty"); // clear dirty flag on all rows    
   }
 
 });

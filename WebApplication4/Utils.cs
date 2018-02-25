@@ -42,7 +42,7 @@ namespace WebApplication4
     /// <param name="moduleId"></param>
     /// <param name="totalRowCnt">if total row count in edited module is less than in saved module, then delete all extra rows from saved module</param>
     /// <param name="dirtyRows">modified rows in edited module</param>
-    public static void UpdateModuleCache(int moduleId, int totalRowCnt, List<Tuple<int, string>> dirtyRows)
+    public static void UpdateModuleCache(int moduleId, int totalRowCnt, List<Tuple<int, string, string>> dirtyRows)
     {
       var cm = moduleCache[moduleId];
       if (totalRowCnt < cm.Rows.Count)

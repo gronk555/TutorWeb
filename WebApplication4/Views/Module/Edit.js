@@ -8,6 +8,7 @@
     if (!module.length) return false; // wrong page, dont set up other event handlers
     addPhraseTemplate();
     populateModule(moduleText); // moduleText defined in Edit.cshtml
+    clearAllDirty();
     module
       .on("dragover", false)
       .on("dragenter", false)
@@ -27,7 +28,7 @@
     .on("change", "[name='NativeLang']", () => updateNativeLangInText())
     .on("change", "[name='ForeignLang']", () => updateForeignLangInText())
     .on("input", '[contenteditable]', e => onInput($(e.target.parentNode))) // TODO: test IE, if input is not fired, add blur keyup paste 
-    .on('paste', '[contenteditable]', e => onInput($(e.target.parentNode))) // TODO: this one is ok, but many other events caused by editing should set isDirty flag on all affected rows, and SHOULD trigger saveModuleText()    
+    .on('paste', '[contenteditable]', e => onInput($(e.target.parentNode)))
     .on('keydown', '[contenteditable]', e => {
       var text = getTextAroundCursor();
       var curRow = $(e.target.parentNode);
@@ -108,34 +109,48 @@
         };
       })
       .toArray();
+    if (!dirtyRows.length) return;
     var param = {
       ModuleId: moduleId,
       TotalRowCnt: totalRowCnt,
       DirtyRows: dirtyRows,
       EnableTTS: $("input#tts")[0].checked
     };
-    var strData = JSON.stringify(param);
+    //var strData = JSON.stringify(param);   //TODOTODO: if param object has strings with single quote, then stringify will not help, it will interfere with data: "{ 'param': '" + strData + "' }",
+    //$.ajax({
+    //  url: route,
+    //  method: "POST",
+    //  data: '{ "param": "' + strData + '" }',
+    //  contentType: "application/json; charset=utf-8", //data param type
+    //  dataType: "json" //return type
+    //})
+    //.done((data) => {      
+    //  clearAllDirty();
+    //})
+    //.fail((err) => {});
     $.ajax({
-      url: route,
+      url: "/Module/SaveModuleText",
       method: "POST",
-      data: "{ 'param': '" + strData + "' }",
+      data: JSON.stringify(param),
       contentType: "application/json; charset=utf-8", //data param type
       dataType: "json" //return type
     })
-    .done((data) => {      
+    .done((data) => {
       clearAllDirty();
     })
-    .fail((err) => {});
+    .fail((err) => {
+      console.log(err)
+    });
   }
 
   function populateModule(text) {
-    var lines = text.split(/[\r\n]+/g); // tolerate both Windows and Unix linebreaks
+    debugger;
+    var lines = text.split(/\r\n|\n\r|\r|\n/g); // tolerate both Windows and Unix linebreaks
     for (var i = 0; i < lines.length; i++) {
       //append to the end of existing module text
       var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
       setText(curRow, cleanString(lines[i]));
     }
-    clearAllDirty();
   }
 
   function fileSize(b) {

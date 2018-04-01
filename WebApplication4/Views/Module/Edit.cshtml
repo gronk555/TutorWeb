@@ -191,5 +191,5 @@
 <script type="text/javascript">
   var route = '@Url.Action("SaveModuleText", "Module")';
   var moduleId = @(Model.Id);
-  var moduleText = '@HttpUtility.JavaScriptStringEncode(Model.Text)';
+  var moduleText = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.Text))';
 </script>

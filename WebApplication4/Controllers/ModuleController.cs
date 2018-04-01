@@ -20,27 +20,11 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-//TODO: 
-//0. 
-//1. create paypal buttons with item name = modulename_Id, put them in module/index and module/details views
-//2. test IPN: try to create & catch incomplete transaction or create buttons with 1 cent price and do real payment
-//3. for each lang create a separate website, use them as fallback if some of them die
-//4. 
-//5. 
-//6. 
-//7. 
-//8. 
-//9.
-//10. add switch to show my/all modules, if login==null, set disabled switch on 'all'
-//11.
-//12. add filter to Index(): by lang, by Tags, by keyword in name or description (priority: low)
-//13. when deploying, change identity of defaultapppool to system:ApplicationPoolIdentity; create a new identity will limited access
-
 namespace WebApplication4.Controllers
 {
   public class ModuleController : Controller
   {
-    private Entities db = new Entities(); //TODO: probably more efficient to create inside api methods that use it
+    private Entities db = new Entities();
 
     public class Phrase
     {
@@ -54,128 +38,6 @@ namespace WebApplication4.Controllers
       public string ForeignLangCode;
       public List<string> NativeWords;            // TODO: set NativeTextReady = true when all separate NativeWords are downloaded, same for ForeignWords 
       public List<string> ForeignWords;
-    }
-    // TODO: review the idea: 
-    // 1) module builder page sends an ajax call to get TTS for one line at a time, 
-    // when native text and all its words are downloaded, the call returns, and page updates UI to show play icon on corresponding line
-    // same for foreign and explanation
-    // 2) module builder page will start a loop, when a txt file is loaded: 
-    // for every line it will detect lang and mark the line red if detected lang does not correspond the line's position (1st: native, 2nd: foreign, 3rd: native),
-    // 3) if auto-correct button is pressed, the page will place lines into native/foreign position accordingly, 
-    // 4) if start TTS button is pressed, the page will do step 1) to get TTS for every line
-
-    #region
-    //public static Phrase[] phrases = new Phrase[0];
-    //public static string CurrentlyTTSProcessedModule = "";
-    //public static int TotalPhrasesToTTSProcess = 0;
-    //public static int NumberOfPhrasesTTSProcessed = 0;
-    //public static bool IsTTSRunning = false;
-    //public static bool IsTTSComplete = false;
-    //public static bool IsTTSStarted = false;
-
-    ///// <summary>Async download of TTS from google. May be used only to restore lost sound files, otherwise it is recommended to run the loop on the client side.</summary>
-    ///// <param name="googleCookie">protection cookie</param>
-    ///// <param name="ttsPath">We dont have access to Server here, so we have to pass Server.MapPath("~/Content/TTS/"+lang)</param>
-    //public static async void RunTTS(string googleCookie, string ttsPath, string nativeLangCode, string foreignLangCode)
-    //{
-    //  await Task.Run(() =>
-    //  {
-    //    //TODO: foreach phrase tries to find a file in "~/Content/TTS/xx", where xx is lang, if not found, get it from google
-    //    TotalPhrasesToTTSProcess = phrases.Count();
-    //    foreach (var phrase in phrases)
-    //    {
-    //      var foreignPath = Path.Combine(ttsPath, foreignLangCode, phrase.ForeignText + ".wav");
-    //      if (!System.IO.File.Exists(foreignPath))
-    //      {
-    //        byte[] data = DownloadVoice(foreignPath, foreignLangCode);
-    //        if (data.Length > 0)
-    //        {
-    //          System.IO.File.WriteAllBytes(foreignPath, data);
-    //        }
-    //      }
-    //      var nativePath = Path.Combine(ttsPath, nativeLangCode, phrase.NativeText + ".wav");
-    //      if (!System.IO.File.Exists(nativePath))
-    //      {
-    //        byte[] data = DownloadVoice(nativePath, foreignLangCode);
-    //        if (data.Length > 0)
-    //        {
-    //          System.IO.File.WriteAllBytes(nativePath, data);
-    //        }
-    //      }
-    //      //TODO: native and foreign words
-    //      phrase.NativeWords.ForEach(w =>
-    //      {
-    //        nativePath = Path.Combine(ttsPath, nativeLangCode, w + ".wav");
-    //        if (!System.IO.File.Exists(nativePath))
-    //        {
-    //          byte[] data = DownloadVoice(nativePath, foreignLangCode);
-    //          if (data.Length > 0)
-    //          {
-    //            System.IO.File.WriteAllBytes(nativePath, data);
-    //          }
-    //        }
-    //      });
-    //      phrase.ForeignWords.ForEach(w =>
-    //      {
-    //        foreignPath = Path.Combine(ttsPath, nativeLangCode, w + ".wav");
-    //        if (!System.IO.File.Exists(nativePath))
-    //        {
-    //          byte[] data = DownloadVoice(nativePath, foreignLangCode);
-    //          if (data.Length > 0)
-    //          {
-    //            System.IO.File.WriteAllBytes(nativePath, data);
-    //          }
-    //        }
-    //      });
-    //      NumberOfPhrasesTTSProcessed++;
-    //    }
-    //  });
-    //}
-    #endregion
-
-
-    //TODO: first check our own location, then  https://api.soundoftext.com/sounds , then a few more fallback sites
-    /// <summary>
-    /// POST to https://api.soundoftext.com/sounds 
-    /// {
-    ///  "engine": "Google",
-    ///  "data": {
-    ///    "text": "Hello, world",
-    ///    "voice": "en-US"
-    ///  }
-    /// }
-    /// response: 
-    /// {success: true, id: "981684a0-15fa-11e8-9416-5382295fa6ae"}
-    /// GET https://api.soundoftext.com/sounds/981684a0-15fa-11e8-9416-5382295fa6ae
-    /// response:
-    /// {status: "Done", location:"https://soundoftext.nyc3.digitaloceanspaces.com/981684a0-15fa-11e8-9416-5382295fa6ae.mp3"}
-    /// GET https://soundoftext.nyc3.digitaloceanspaces.com/981684a0-15fa-11e8-9416-5382295fa6ae.mp3
-    /// 
-    /// </summary>
-    /// <param name="text"></param>
-    /// <param name="lang">TODO: must be compliant with the list (case sensitive match!) https://soundoftext.com/docs#index </param>
-    public static void DownloadVoice(string text, string lang, string fileName)
-    {
-      if (String.IsNullOrWhiteSpace(text) || String.IsNullOrWhiteSpace(lang))
-        return;
-      var url = "https://api.soundoftext.com/sounds/";
-      using (WebClient wc = new WebClient())
-      {
-        var data = new
-        {
-          engine = "Google",
-          data = new
-          {
-            text = text,
-            voice = lang
-          }
-        };
-
-        wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-        dynamic res = System.Web.Helpers.Json.Decode(wc.UploadString(url, "POST", JsonConvert.SerializeObject(data)));
-        res = System.Web.Helpers.Json.Decode(wc.DownloadString(url + res.id));
-        wc.DownloadFile(res.location, fileName);
-      }
     }
 
     //		public button2 = "
@@ -285,61 +147,6 @@ namespace WebApplication4.Controllers
         PaypalButtonId = module.PaypalButtonId,
         ImagePath = filePath != null ? "../../Content/Upload/" + Path.GetFileName(filePath) : "../../Content/Upload/lds-audio-book.jpeg"
       };
-
-      #region
-      //Locked modules have all tts ready, dont parse them;
-      //if unLocked, and (admin or owner), then for each phrase in Text try to find tts file incrementing NumberOfPhrasesTTSProcessed. Prepare TTSStatus
-      //test cases: 1) never started, 2) web service restarted, 3) running this module, 4) running different module, 5) completed, 6) completed and restarted web service
-      //if (!module.Locked && isAdmin)
-      //{
-      //  string moduleName = String.IsNullOrWhiteSpace(CurrentlyTTSProcessedModule) ? module.Name : CurrentlyTTSProcessedModule;
-      //  if (!IsTTSStarted && !IsTTSComplete) //never started, or web service was restarted (even if it was completed before)
-      //  {
-      //    //TODO: when populating phrases, save nativeText, foreignText, expl, string[] foreignWords, nativeLangCode, foreignLangCode
-      //    //TODO: validation, check if mp3 exists, detect lang, populate array of Phrase (we only need text and lang for each line, skip link)
-      //    //TODO: public class Phrase { NativeText, ForeignText, Expl, WebLinkTitle, WebLink }; get native and foreign langs from module.NativeLang, ForeignLang
-      //    phrases = module.Text == null ? new string[0] : module.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select(t => new Phrase() { Text = t, LangCode = });
-      //    vm.TTSStatus = "Press Start TTS to process " + moduleName + " module.";
-      //  }
-      //  foreach (string phrase in phrases)
-      //  {
-      //    var path = Path.Combine(Server.MapPath("~/Content/TTS"), phrase + ".wav");    //TODO: /TTS/ + lang
-      //    if (System.IO.File.Exists(path)) NumberOfPhrasesTTSProcessed++;
-      //  }
-      //  if (IsTTSStarted && !IsTTSComplete) //started, not yet completed (selected or different module)
-      //  {
-      //    vm.TTSStatus = "Processing module: " + moduleName +
-      //      ". Completed " + NumberOfPhrasesTTSProcessed + " / " + phrases.Count() +
-      //      " Status: " + (IsTTSRunning ? "running" : "interrupted");
-      //  }
-      //  if (IsTTSStarted && IsTTSComplete) //started, completed
-      //  {
-      //    vm.TTSStatus = "Completed module: " + moduleName +
-      //      ". " + NumberOfPhrasesTTSProcessed + " / " + phrases.Count();
-      //  }
-      //  vm.IsTTSStarted = IsTTSStarted; //used in the view to disable "Start TTS" button
-      //}
-
-      //private List<Phrase> LoadPhrases(string text)
-      //{
-      //  List<Phrase> list = new List<Phrase>();
-      //  var phrases = text == null ? new string[0] : text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-      //  if (phrases.Count() == 0) return list;
-      //  for (int i = 0; i < phrases.Count() / 5; i += 5)
-      //  {
-      //    Phrase p = new Phrase()
-      //    {
-      //      NativeText = phrases[i],
-      //      ForeignText = phrases[i + 1],
-      //      Explanation = phrases[i + 2],
-      //      NativeWords = phrases[i] == null ? new List<string>() : (phrases[i] + " " + phrases[i + 2]).Split(new string[] { " ", "\t", "," }, StringSplitOptions.None).Where(w => w.Length > 0).ToList(),
-      //      ForeignWords = phrases[i + 1] == null ? new List<string>() : phrases[i + 1].Split(new string[] { " ", "\t", "," }, StringSplitOptions.None).Where(w => w.Length > 0).ToList()
-      //    };
-      //    list.Add(p);
-      //  }
-      //  return list;
-      //}
-      #endregion
 
       if (!String.IsNullOrWhiteSpace(vm.Text)) //truncate text for details view, after working on phrases and TTS status!
         vm.Text = vm.Text.Substring(0, Math.Min(vm.Text.Length, 100)) + "...";
@@ -452,6 +259,13 @@ namespace WebApplication4.Controllers
         TransUILabels = m.TransUILabels ?? transUILabelsTemplate //if module have some lang defined, put it here, otherwise, put a template
       };
       Utils.PopulateModuleCache(m.Id, db); // if module is open for editing, then prepare cache for editor
+      var moduleIds = Session["ModuleIds"] as List<int>;
+      if (moduleIds == null)
+      {
+        moduleIds = new List<int>();
+        Session["ModuleIds"] = moduleIds; //when session expires, we'll remove its modules from cache (except those still downloading TTS)
+      }
+      if (!moduleIds.Contains(m.Id)) moduleIds.Add(m.Id);
       return View(vm);
     }
 
@@ -504,93 +318,15 @@ namespace WebApplication4.Controllers
     /// <summary>
     /// autosave, called from UI when editing
     /// </summary>
-    /// <param name="param">{ ModuleId: int, TotalRowCnt: int, DirtyRows: {iRow: int, value: string}[] }</param>
+    /// <param name="param">{ ModuleId: int, TotalRowCnt: int, DirtyRows: {iRow: int, value: string, langCode: string}[] }</param>
     /// <returns>empty string</returns>
     [HttpPost]
     [Authorize]
-    public JsonResult SaveModuleText(string param)
+    public JsonResult SaveModuleText(Utils.ModuleChanges param)
     {
-      var o = JObject.Parse(param);
-      var list = o["DirtyRows"].Select(x => new Tuple<int, string, string>(Int32.Parse(x["iRow"].ToString()), x["value"].ToString(), x["langCode"].ToString())).ToList();
-      Utils.UpdateModuleCache(o["ModuleId"].ToObject<int>(), o["TotalRowCnt"].ToObject<int>(), list);
-
-      if ((bool)o["EnableTTS"]) // if TTS download is enabled
-        list.ForEach(row =>
-        {
-          var ttsPath = Server.MapPath("~/Content/TTS/");
-          var dir = Directory.CreateDirectory(Path.Combine(ttsPath, row.Item3)); // if lang is new, create a folder for it
-          var filePath = Path.Combine(dir.FullName, row.Item2 + ".mp3"); // row.Item2 = value
-          if (!System.IO.File.Exists(filePath))
-          {
-            DownloadVoice(row.Item2, row.Item3, filePath); // row.Item2 = value, row.Item3 = lang
-          }
-        });
+      Utils.UpdateModuleCache(param);
       return Json("");
-      // TODO: collect TTS for all dirty rows, check if specified lang corresponds to row value
     }
-
-
-
-
-
-
-    //[HttpPost]
-    //public ActionResult StartTTS([Bind(Include = "Id,Name,GoogleTTSCookie", Exclude = "SoldNumber,UserId")] CreateViewModel vm)
-    //{
-    //  if (!IsTTSStarted)
-    //  {
-    //    Module module = db.Modules.Find(vm.Id);
-    //    if (module == null)
-    //    {
-    //      return HttpNotFound();
-    //    }
-    //    var curUser = db.AspNetUsers.FirstOrDefault(o => o.UserName == User.Identity.Name);
-    //    bool isAdmin = curUser == null ? false : curUser.IsAdmin == true;
-    //    if (phrases.Count() == 0) //usually it will be already populated by Details action, but just in case...
-    //    {
-    //      //TODO: when populating phrases, specify lang for each phrase!
-    //      phrases = module.Text == null ? new string[0] : module.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-    //    }
-    //    if (!module.Locked && isAdmin && phrases.Count() > 0)
-    //    {
-    //      RunTTS(vm.GoogleTTSCookie, Server.MapPath("~/Content/TTS/"));
-    //    }
-    //  }
-    //  return RedirectToAction("Details", new { id = vm.Id });
-    //}
-
-    //public ActionResult RunTTS(int? id, string GoogleTTSCookie)
-    //{
-    //  if (id == null)
-    //    return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-    //  Module m = db.Modules.Find(id);
-    //  if (m == null)
-    //    return HttpNotFound();
-
-    //  //check security
-    //  var curUser = db.AspNetUsers.FirstOrDefault(o => o.UserName == User.Identity.Name);
-    //  bool isAdmin = curUser == null ? false : curUser.IsAdmin == true;
-    //  if (!isAdmin)
-    //  {
-    //    if (m.UserId != User.Identity.GetUserId())
-    //      TempData["warning"] = "You must be admin to run TTS.";
-    //    if (m.Locked)
-    //      TempData["warning"] = "This module is locked and cannot be edited or deleted.";
-    //    if (TempData["warning"] != null)
-    //      return RedirectToAction("Details", new { id = id });
-    //  }
-    //  //TODO: get value from GoogleTTSCookie, 
-    //  //add a static string CurrentlyProcessedModule; - name of the module, we are currently getting tts for
-    //  //static int TotalPhrasesToProcess; - number of phrases in the CurrentlyProcessedModule
-    //  //static int NumberOfPhrasesProcessed;
-    //  //start a Task thread that will read module text, fill in TotalPhrasesToProcess, NumberOfPhrasesProcessed, and send requests to google to translate each phrase, 
-    //  //save TTS files into Content/TTS, give names exactly as phrase text
-    //  //if google blocks requests, then set GoogleTTSCookie == "enter new cookie", and stop requesting
-    //  //
-    //  //StartTTS(googleCookie)
-
-    //  return RedirectToAction("Details", new { id = id });
-    //}
 
     public string SaveFile(int moduleId, HttpPostedFileBase file)
     {
@@ -795,7 +531,7 @@ namespace WebApplication4.Controllers
         {
           newKeysBatch.Add(s);
           // trim all whitespaces, non-alpha chars
-          var key = s.Split(new char[] { ' ', '\t', '\r', '\n', ',', '.', '!', '?', '-', '+' }).Where(o => !string.IsNullOrWhiteSpace(o));
+          var key = s.Split(Utils.WordSeparators).Where(o => !string.IsNullOrWhiteSpace(o));
           query += $"q[]={string.Join("+", key)}&";
         }
       });
@@ -982,12 +718,6 @@ namespace WebApplication4.Controllers
     public string NewForeignLangCode { get; set; }
     public string NewForeignLangName { get; set; }
     public string TransUILabels { get; set; }
-
-    /// <summary>if we use translate.google.com tts, then we have to pass the cookie TODO: remove?</summary>
-    public string GoogleTTSCookie { get; set; }
-    /// <summary>Number of phrases converted to sound, total, state, e.g. "14/1000 Running..." or "14/1000 Cookie expired..."  TODO: remove?</summary>
-    public string TTSStatus { get; set; }
-    public bool IsTTSStarted { get; set; }
   }
 
   public class IndexViewModel

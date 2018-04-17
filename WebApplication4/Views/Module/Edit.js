@@ -110,6 +110,7 @@
       })
       .toArray();
     if (!dirtyRows.length) return;
+    // TODO: if lang or any other module property is changed, pass it to param (only if we want to give up POST action on edit)
     var param = {
       ModuleId: moduleId,
       TotalRowCnt: totalRowCnt,

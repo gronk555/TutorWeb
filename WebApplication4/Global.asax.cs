@@ -5,6 +5,7 @@ using System.Web;
 using System.Web.Mvc;
 using System.Web.Optimization;
 using System.Web.Routing;
+using System.Web.Caching;
 using System.Collections.Generic;
 
 namespace WebApplication4
@@ -18,9 +19,9 @@ namespace WebApplication4
       FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
       RouteConfig.RegisterRoutes(RouteTable.Routes);
       BundleConfig.RegisterBundles(BundleTable.Bundles);
-      
-      //start agent timer with task to flush module cache every 2 mins
-      agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);
+      HttpRuntime.Cache.Add("ttsPath", HttpContext.Current.Server.MapPath("~/Content/TTS/"), null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.High, null);
+     //start agent timer with task to flush module cache every 2 mins
+     agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);
     }
 
     protected void Application_End()

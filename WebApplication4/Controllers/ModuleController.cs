@@ -325,7 +325,7 @@ namespace WebApplication4.Controllers
     public JsonResult SaveModuleText(Utils.ModuleChanges param)
     {
       Utils.UpdateModuleCache(param);
-      return Json("");
+      return Json(""); // TODO: return progress of getTTS
     }
 
     public string SaveFile(int moduleId, HttpPostedFileBase file)

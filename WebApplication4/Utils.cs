@@ -72,9 +72,11 @@ namespace WebApplication4
         moduleCache[moduleId].SessionExpired = false;
         return true;
       }
-      Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId);
+      Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId); // read module from db into the dict
       if (m == null) return false;
-      var cm = new CachedModule(); // read module from db into the dict
+      var cm = new CachedModule();
+      cm.ForeignLangCode = m.ForeignLang;
+      cm.NativeLangCode = m.NativeLang;
       cm.Rows = string.IsNullOrWhiteSpace(m.Text) ?
         cm.Rows :
         m.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select((s, i) => new DirtyRow()
@@ -154,26 +156,37 @@ namespace WebApplication4
       // download for one module at a time
       foreach (var m in moduleCache.Where(mm => mm.Value.EnableTTS && !mm.Value.CompletedTTS))
       {
-        foreach (var r in m.Value.Rows.Where(rr => !rr.CompletedTTS))
+        try
         {
-          string langCode = m.Value.LangCode(r.iRow);
-          DownloadTTS(r.value, langCode, filePath(r.value, langCode));
-          foreach (var word in r.value.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries))
-            DownloadTTS(word, langCode, filePath(word, langCode));
+          m.Value.CompletedTTS = true;
+          foreach (var r in m.Value.Rows.Where(rr => !rr.CompletedTTS))
+          {
+            string langCode = m.Value.LangCode(r.iRow);
+            r.CompletedTTS = DownloadTTS(r.value, langCode, ttsFilePath(r.value, langCode));
+            foreach (var word in r.value.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries))
+              r.CompletedTTS &= DownloadTTS(word, langCode, ttsFilePath(word, langCode));
+            m.Value.CompletedTTS &= r.CompletedTTS;
+          }
+          // after module download finished, check if user's session is expired, then remove module from cache
+          if (moduleCache[m.Key].SessionExpired && m.Value.CompletedTTS)
+          {
+            CachedModule val = null;
+            moduleCache.TryRemove(m.Key, out val);
+          }
         }
-        // after module download finished, check if user's session is expired, then remove module from cache
-        if (moduleCache[m.Key].SessionExpired)
+        catch (Exception ex)
         {
-          CachedModule val = null;
-          moduleCache.TryRemove(m.Key, out val);
+          m.Value.CompletedTTS = false;
+          Log(ex.Message);
         }
       }
       getTTSIsRunning = false;
     }
 
-    private static string filePath(string phrase, string langCode)
+    private static string ttsFilePath(string phrase, string langCode)
     {
-      var ttsPath = HttpContext.Current.Server.MapPath("~/Content/TTS/");
+      var ttsPath = HttpRuntime.Cache["ttsPath"] as string;
+      phrase = phrase.ToLowerInvariant() == "con" ? "conn" : phrase; // "con" file is reserved for system console
       var dir = Directory.CreateDirectory(Path.Combine(ttsPath, langCode)); // if lang is new, create a folder for it
       return Path.Combine(dir.FullName, phrase + ".mp3");
     }
@@ -199,13 +212,16 @@ namespace WebApplication4
     /// <param name="text">phrase/word to be converted to mp3 file</param>
     /// <param name="langCode">must be compliant with the list (case sensitive match!) https://soundoftext.com/docs#index </param>
     /// <param name="filePath">location of mp3 file</param>
-    public static void DownloadTTS(string text, string langCode, string filePath)
+    /// <returns>true if success or already exists</returns>
+    public static bool DownloadTTS(string text, string langCode, string filePath)
     {
+      bool result = false;
       if (String.IsNullOrWhiteSpace(text) ||
         String.IsNullOrWhiteSpace(langCode) ||
-        String.IsNullOrWhiteSpace(filePath) ||
-        File.Exists(filePath))
-        return;
+        String.IsNullOrWhiteSpace(filePath))
+        return result;
+      text = text.ToLowerInvariant() == "con" ? "conn" : text; // "con" file is reserved for system console
+      if (File.Exists(filePath)) return true;
       var url = "https://api.soundoftext.com/sounds/";
       using (WebClient wc = new WebClient())
       {
@@ -219,10 +235,26 @@ namespace WebApplication4
           }
         };
         wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-        dynamic res = System.Web.Helpers.Json.Decode(wc.UploadString(url, "POST", JsonConvert.SerializeObject(data)));
-        res = System.Web.Helpers.Json.Decode(wc.DownloadString(url + res.id));
-        wc.DownloadFile(res.location, filePath);
+        try
+        {
+          dynamic res = System.Web.Helpers.Json.Decode(wc.UploadString(url, "POST", JsonConvert.SerializeObject(data)));
+          res = System.Web.Helpers.Json.Decode(wc.DownloadString(url + res.id));
+          if (res.status == "Pending" || res.location == null)
+          {
+            Log($"pending: {text}");
+            return result;
+          }
+          else
+            wc.DownloadFile(res.location, filePath);
+          result = true;
+        }
+        catch (Exception ex)
+        {
+          Log($"ERROR: {ex.Message}");
+          return result;
+        }
       }
+      return result;
     }
 
 

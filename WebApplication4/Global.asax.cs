@@ -20,13 +20,13 @@ namespace WebApplication4
       RouteConfig.RegisterRoutes(RouteTable.Routes);
       BundleConfig.RegisterBundles(BundleTable.Bundles);
       HttpRuntime.Cache.Add("ttsPath", HttpContext.Current.Server.MapPath("~/Content/TTS/"), null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.High, null);
-     //start agent timer with task to flush module cache every 2 mins
-     agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);
+      //start agent timer with task to flush module cache every 2 mins
+      agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);
     }
 
     protected void Application_End()
     {
-      agentTimer.Change(0, 0); // TODO: test
+      agentTimer.Change(0, 0);
     }
 
     protected void Session_OnEnd(object sender, EventArgs e)

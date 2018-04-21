@@ -90,17 +90,17 @@
 
     <script id="phrase-template" type="text/x-phrase-template">
       <tr class="dirty">
-        <td title="Here must be a phrase in native language">@Model.NativeLang</td>
+        <td title="Here must be a phrase in native language">{{Model.NativeLang}}</td>
         <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="example text ..."></td>
       </tr>
       <tr class="dirty">
-        <td title="Here must be the phrase in foreign language">@Model.ForeignLang</td>
+        <td title="Here must be the phrase in foreign language">{{Model.ForeignLang}}</td>
         <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="ejemplo de texto ..."></td>
       </tr>
       <tr class="dirty">
-        <td title="Here must be a helping message in native language">@Model.NativeLang</td>
+        <td title="Here must be a helping message in native language">{{Model.NativeLang}}</td>
         <td><i class="fa fa-play" title="Click to play"></i></td>
         <td contenteditable="true" placeholder="example of explanation ..."></td>
       </tr>
@@ -186,10 +186,11 @@
 
 @section Scripts {
   @Scripts.Render("~/bundles/jqueryval")
+  <script type="text/javascript">
+    var route = '@Url.Action("SaveModuleText", "Module")';
+    var moduleId = @(Model.Id);
+    var moduleText = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.Text))';
+    var nativeLang = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.NativeLang))';
+    var foreignLang = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.ForeignLang))';
+  </script>
 }
-
-<script type="text/javascript">
-  var route = '@Url.Action("SaveModuleText", "Module")';
-  var moduleId = @(Model.Id);
-  var moduleText = '@Html.Raw(HttpUtility.JavaScriptStringEncode(Model.Text))';
-</script>

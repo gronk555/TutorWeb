@@ -99,7 +99,11 @@ namespace WebApplication4
         cm.Rows.RemoveRange(param.TotalRowCnt, cm.Rows.Count - param.TotalRowCnt);
       else if (param.TotalRowCnt > cm.Rows.Count)
         cm.Rows.AddRange(new DirtyRow[param.TotalRowCnt - cm.Rows.Count]); // allocate for new rows
-      Array.ForEach<DirtyRow>(param.DirtyRows, r => cm.Rows[r.iRow] = r); // copy all updated rows to cache
+      Array.ForEach<DirtyRow>(param.DirtyRows, r => 
+      {
+        r.value = r.value == null ? r.value : string.Join(" ", r.value.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim(); //replace invalid file chars with space
+        cm.Rows[r.iRow] = r;
+      }); // copy all updated rows to cache
       cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
       cm.EnableTTS = param.EnableTTS; // will be used by getTTS
     }
@@ -159,12 +163,15 @@ namespace WebApplication4
         try
         {
           m.Value.CompletedTTS = true;
-          foreach (var r in m.Value.Rows.Where(rr => !rr.CompletedTTS))
+          foreach (var r in m.Value.Rows.Where(rr => !rr.CompletedTTS && !string.IsNullOrWhiteSpace(rr.value)))
           {
             string langCode = m.Value.LangCode(r.iRow);
             r.CompletedTTS = DownloadTTS(r.value, langCode, ttsFilePath(r.value, langCode));
             foreach (var word in r.value.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries))
-              r.CompletedTTS &= DownloadTTS(word, langCode, ttsFilePath(word, langCode));
+            {
+              var _word = word.Where(c => !char.IsPunctuation(c)).Aggregate("", (current, c) => current + c); // remove remaining punctuation from separate words
+              r.CompletedTTS &= DownloadTTS(_word, langCode, ttsFilePath(_word, langCode));
+            }
             m.Value.CompletedTTS &= r.CompletedTTS;
           }
           // after module download finished, check if user's session is expired, then remove module from cache
@@ -177,7 +184,7 @@ namespace WebApplication4
         catch (Exception ex)
         {
           m.Value.CompletedTTS = false;
-          Log(ex.Message);
+          Log($"{ex.Message}\r\n{ex.StackTrace}");
         }
       }
       getTTSIsRunning = false;
@@ -250,7 +257,7 @@ namespace WebApplication4
         }
         catch (Exception ex)
         {
-          Log($"ERROR: {ex.Message}");
+          Log($"{ex.Message}\r\n{ex.StackTrace}");
           return result;
         }
       }

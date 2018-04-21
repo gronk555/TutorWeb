@@ -102,9 +102,10 @@
     var dirtyRows = module
       .find("tr.dirty")
       .map((i, row) => {
+        var text = getText($(row));
         return {
           iRow: row.rowIndex,
-          value: getText($(row)),
+          value: text && text.trim(),
           langCode: $(row).children().first().text()
         };
       })
@@ -237,7 +238,10 @@
       res += getText(row);
     }
     if (rowCnt == 0 || res != "") {
-      module.append($("#phrase-template").html());
+      var tmpl = $("#phrase-template").html();
+      tmpl = tmpl.replace(/{{Model.NativeLang}}/g, nativeLang);
+      tmpl = tmpl.replace(/{{Model.ForeignLang}}/g, foreignLang);
+      module.append(tmpl);
       rowCnt += 4;
     }
     return module.find('tr').eq(rowCnt - 4); // 1st row of the last phrase
@@ -249,16 +253,22 @@
   }
 
   function updateNativeLangInText() {
-    var langCode = $("[name='NativeLang'] option:selected").val();
+    nativeLang = $("[name='NativeLang'] option:selected").val();
     module.find("tr:nth-child(2n+1)").each(function (i) {
-      $(this).children().first().text(langCode);  // beware of this not working with =>
+      $(this).children().first().text(nativeLang);  // beware of this not working with =>
+    });
+    $("#phrase-template").find("tr:nth-child(2n+1)").each(function (i) {
+      $(this).children().first().text(nativeLang);  // beware of this not working with =>
     });
   }
 
   function updateForeignLangInText() {
-    var langCode = $("[name='ForeignLang'] option:selected").val();
+    foreignLang = $("[name='ForeignLang'] option:selected").val();
     module.find("tr:nth-child(4n+2)").each(function (i) {
-      $(this).children().first().text(langCode);  // beware of this not working with =>
+      $(this).children().first().text(foreignLang);  // beware of this not working with =>
+    });
+    $("#phrase-template").find("tr:nth-child(4n+2)").each(function (i) {
+      $(this).children().first().text(foreignLang);  // beware of this not working with =>
     });
   }
 

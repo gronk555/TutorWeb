@@ -66,26 +66,34 @@ namespace WebApplication4
     /// <returns>true if module exists in db</returns>
     public static bool PopulateModuleCache(int moduleId, Entities db)
     {
-      if (moduleCache.Keys.Contains(moduleId))
-      { // if session was dead, but getTTS still used the cached module for download TTS, and we reopen the editor, 
-        // then mark SessionExpired = false, so that when getTTS finishes it does not clear module from cache
-        moduleCache[moduleId].SessionExpired = false;
+      try
+      {
+        if (moduleCache.Keys.Contains(moduleId))
+        { // if session was dead, but getTTS still used the cached module for download TTS, and we reopen the editor, 
+          // then mark SessionExpired = false, so that when getTTS finishes it does not clear module from cache
+          moduleCache[moduleId].SessionExpired = false;
+          return true;
+        }
+        Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId); // read module from db into the dict
+        if (m == null) return false;
+        var cm = new CachedModule();
+        cm.ForeignLangCode = m.ForeignLang;
+        cm.NativeLangCode = m.NativeLang;
+        cm.Rows = string.IsNullOrWhiteSpace(m.Text) ?
+          cm.Rows :
+          m.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select((s, i) => new DirtyRow()
+          {
+            value = s,
+            iRow = i,
+          }).ToList();
+        moduleCache[moduleId] = cm;
         return true;
       }
-      Module m = db.Modules.FirstOrDefault(o => o.Id == moduleId); // read module from db into the dict
-      if (m == null) return false;
-      var cm = new CachedModule();
-      cm.ForeignLangCode = m.ForeignLang;
-      cm.NativeLangCode = m.NativeLang;
-      cm.Rows = string.IsNullOrWhiteSpace(m.Text) ?
-        cm.Rows :
-        m.Text.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).Select((s, i) => new DirtyRow()
-        {
-          value = s,
-          iRow = i,
-        }).ToList();
-      moduleCache[moduleId] = cm;
-      return true;
+      catch (Exception ex)
+      {
+        Log($"{ex.Message}\r\n{ex.StackTrace}");
+        return false;
+      }
     }
 
     /// <summary>called from SaveModuleText api</summary>
@@ -94,18 +102,25 @@ namespace WebApplication4
     /// <param name="dirtyRows">modified rows in edited module</param>
     public static void UpdateModuleCache(ModuleChanges param)
     {
-      var cm = moduleCache[param.ModuleId];
-      if (param.TotalRowCnt < cm.Rows.Count)
-        cm.Rows.RemoveRange(param.TotalRowCnt, cm.Rows.Count - param.TotalRowCnt);
-      else if (param.TotalRowCnt > cm.Rows.Count)
-        cm.Rows.AddRange(new DirtyRow[param.TotalRowCnt - cm.Rows.Count]); // allocate for new rows
-      Array.ForEach<DirtyRow>(param.DirtyRows, r => 
+      try
       {
-        r.value = r.value == null ? r.value : string.Join(" ", r.value.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim(); //replace invalid file chars with space
+        var cm = moduleCache[param.ModuleId];
+        if (param.TotalRowCnt < cm.Rows.Count)
+          cm.Rows.RemoveRange(param.TotalRowCnt, cm.Rows.Count - param.TotalRowCnt);
+        else if (param.TotalRowCnt > cm.Rows.Count)
+          cm.Rows.AddRange(new DirtyRow[param.TotalRowCnt - cm.Rows.Count]); // allocate for new rows
+        Array.ForEach<DirtyRow>(param.DirtyRows, r =>
+        {
+          r.value = r.value == null ? r.value : string.Join(" ", r.value.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim(); //replace invalid file chars with space
         cm.Rows[r.iRow] = r;
-      }); // copy all updated rows to cache
-      cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
-      cm.EnableTTS = param.EnableTTS; // will be used by getTTS
+        }); // copy all updated rows to cache
+        cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
+        cm.EnableTTS = param.EnableTTS; // will be used by getTTS
+      }
+      catch (Exception ex)
+      {
+        Log($"{ex.Message}\r\n{ex.StackTrace}");
+      }
     }
 
     /// <summary>
@@ -139,9 +154,10 @@ namespace WebApplication4
         m.Text = string.Join("\r\n", moduleCache[moduleId].Rows.Select(r => r.value));
         db.SaveChanges(); // this can take long
       }
-      catch
+      catch (Exception ex)
       {
         moduleCache[moduleId].IsDirty = true;
+        Log($"{ex.Message}\r\n{ex.StackTrace}");
         return false;
       }
       return true;
@@ -183,6 +199,8 @@ namespace WebApplication4
         }
         catch (Exception ex)
         {
+          // TODO: if we call UpdateModuleCache while getTTS is working, getTTS will throw "collection was modified" and will restart all modules in 2 mins
+          // probably more graceful is to call ToList(), then check on every iteration that m.Value.EnableTTS is still true, otherwise skip the module m
           m.Value.CompletedTTS = false;
           Log($"{ex.Message}\r\n{ex.StackTrace}");
         }

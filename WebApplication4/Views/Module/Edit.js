@@ -18,10 +18,14 @@
         var file = e.originalEvent.dataTransfer.files[0];
         startReadingFile(file);
       });
+    $("#editor_form").submit(event => {
+      saveModuleText(); // on form submit, save editor text to cache just in case agent has not done it yet
+    });
   }
 
   $(document)
     .ready(onDocumentReady)
+    .on("change", "#tts", e => enableTTS(e))
     .on("click", "#save_as_file", () => downloadModuleText())
     .on('click', '#delete_all', () => clearModuleTable())
     .on("change", "#file-input", e => startReadingFile(e.target.files[0]))
@@ -131,7 +135,7 @@
     //})
     //.fail((err) => {});
     $.ajax({
-      url: "/Module/SaveModuleText",
+      url: route, // hardcoded "/Module/SaveModuleText" will not work after publishing since it must be prepended with webAppName
       method: "POST",
       data: JSON.stringify(param),
       contentType: "application/json; charset=utf-8", //data param type
@@ -146,11 +150,11 @@
   }
 
   function populateModule(text) {
-    debugger;
+    debugger; 
     var lines = text.split(/\r\n|\n\r|\r|\n/g); // tolerate both Windows and Unix linebreaks
     for (var i = 0; i < lines.length; i++) {
       //append to the end of existing module text
-      var curRow = i % 4 ? curRow.next() : addPhraseTemplate();
+      var curRow = i % 4 ? curRow.next() : addPhraseTemplate(); // by defaule all rows are Dirty
       setText(curRow, cleanString(lines[i]));
     }
   }
@@ -311,6 +315,11 @@
         }
         row.remove();
       }
+  }
+
+  function enableTTS(e) {
+    $(module[0].rows[0]).addClass("dirty"); // if there are no dirty rows we wont reach backend
+    db();
   }
 
   function downloadModuleText() {

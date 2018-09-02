@@ -218,6 +218,11 @@ namespace WebApplication4.Controllers
     {
       if (id == null)
         return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+
+      // just in case, if module was closed and reopened before FlushModuleCache was called by agent, lets flush cache to db before reading module
+      if (Utils.moduleCache.ContainsKey(id.Value) && Utils.moduleCache[id.Value].IsDirty)
+        Utils.FlushModuleCache(id.Value);
+
       Module m = db.Modules.Find(id);
       if (m == null)
         return HttpNotFound();
@@ -234,6 +239,7 @@ namespace WebApplication4.Controllers
         if (TempData["warning"] != null)
           return RedirectToAction("Details", new { id = id });
       }
+
       IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
       string filePath = Directory.GetFiles(Server.MapPath("~/Content/Upload"), m.Id + ".*").FirstOrDefault();
       var vm = new CreateViewModel()

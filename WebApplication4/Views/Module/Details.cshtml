@@ -109,29 +109,6 @@
       {
      		@Html.HiddenFor(model => model.Id)
      		@Html.HiddenFor(model => model.Name)
-
-        <dt>
-          @Html.DisplayNameFor(model => model.GoogleTTSCookie)
-        </dt>
-
-        <dd>
-          @Html.EditorFor(model => model.GoogleTTSCookie)
-          @Html.ValidationMessageFor(model => model.GoogleTTSCookie)
-        </dd>
-
-        <dt>
-          @Html.DisplayNameFor(model => model.TTSStatus)
-        </dt>
-
-        <dd>
-          @Html.DisplayFor(model => model.TTSStatus)
-        </dd>
-
-        <input type="submit" name="StartTTS" value="Start TTS" 
-          @{ if(Model.IsTTSStarted) 
-            { @: disabled="disabled" 
-            } 
-          } />
       }
     }
 		if (TempData["warning"] == null)

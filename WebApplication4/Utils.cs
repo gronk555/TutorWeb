@@ -294,14 +294,18 @@ namespace WebApplication4
     }
     #endregion module cache
 
+    private static object locker = new object();
     public static void Log(string msg)
     {
       try
       {
-        if (ConfigurationManager.AppSettings["EnableLog"] != "true") return;
-        StreamWriter s = new StreamWriter(ConfigurationManager.AppSettings["LogFileName"], true);
-        s.WriteLine(DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss") + " " + msg);
-        s.Close();
+        lock (locker)
+        {
+          if (ConfigurationManager.AppSettings["EnableLog"] != "true") return;
+          StreamWriter s = new StreamWriter(ConfigurationManager.AppSettings["LogFileName"], true);
+          s.WriteLine(DateTime.UtcNow.ToString("dd/MM/yy HH:mm:ss") + " " + msg);
+          s.Close();
+        }
       }
       catch (Exception ex)
       {

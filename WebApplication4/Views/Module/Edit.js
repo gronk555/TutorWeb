@@ -152,11 +152,28 @@
   function populateModule(text) {
     debugger; 
     var lines = text.split(/\r\n|\n\r|\r|\n/g); // tolerate both Windows and Unix linebreaks
+
+    //temp solution to add extra line and remove non-alphanumeric chars:
+    let j = 0;
     for (var i = 0; i < lines.length; i++) {
       //append to the end of existing module text
-      var curRow = i % 4 ? curRow.next() : addPhraseTemplate(); // by defaule all rows are Dirty
-      setText(curRow, cleanString(lines[i]));
+      var curRow = j++ % 4 ? curRow.next() : addPhraseTemplate(); // by default all rows are Dirty
+      let cleanStr = cleanString(lines[i]);
+      setText(curRow, cleanStr);
+      if (!cleanStr && i < lines.length && cleanString(lines[i - 1]) && cleanString(lines[i + 1])) // look 1 row ahead, and 1 back, if they are not empty, then add an empty row
+      {
+        j++;
+        curRow = curRow.next();
+        if (curRow.length) setText(curRow, '');
+      }
     }
+
+
+    //for (var i = 0; i < lines.length; i++) {
+    //  //append to the end of existing module text
+    //  var curRow = i % 4 ? curRow.next() : addPhraseTemplate(); // by defaule all rows are Dirty
+    //  setText(curRow, cleanString(lines[i]));
+    //}
   }
 
   function fileSize(b) {
@@ -341,7 +358,7 @@
   }
 
   function cleanString(s) {
-    return s.replace(/[~#%&*{}\\:<>?/+|\"]/g, "");
+    return !s ? "" : s.replace(/[~#%&*{}\\:<>?/+|\"”“,.…¿¡\-—_'`!@$^()=\]\[;]/g, "");
   }
 
   function setText(row, txt, skipEvent) {

@@ -162,10 +162,13 @@ namespace WebApplication4.Controllers
       IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
       var vm = new CreateViewModel()
       {
-        ForeignLangList = new SelectList(l, "LangCode", "LangName"),
-        NativeLangList = new SelectList(l, "LangCode", "LangName"),
+        ForeignLangList = new SelectList(l, "LangCode", "LangName").ToList(),
+        NativeLangList = new SelectList(l, "LangCode", "LangName").ToList(),
         TransUILabels = transUILabelsTemplate
       };
+      vm.ForeignLangList.Single(o => o.Value == "es-ES").Selected = true;
+      vm.NativeLangList.Single(o => o.Value == "en-US").Selected = true;
+      var tmp = vm.NativeLangList.ToList();
       return View(vm);
     }
 
@@ -240,7 +243,7 @@ namespace WebApplication4.Controllers
           return RedirectToAction("Details", new { id = id });
       }
 
-      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
+      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-").ToList();
       string filePath = Directory.GetFiles(Server.MapPath("~/Content/Upload"), m.Id + ".*").FirstOrDefault();
       var vm = new CreateViewModel()
       {

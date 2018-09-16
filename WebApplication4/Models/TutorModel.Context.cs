@@ -9,29 +9,29 @@
 
 namespace WebApplication4.Models
 {
-    using System;
-    using System.Data.Entity;
-    using System.Data.Entity.Infrastructure;
-    
-    public partial class Entities : DbContext
+  using System;
+  using System.Data.Entity;
+  using System.Data.Entity.Infrastructure;
+
+  public partial class Entities : DbContext
+  {
+    public Entities()
+        : base("name=Entities")
     {
-        public Entities()
-            : base("name=Entities")
-        {
-        }
-    
-        protected override void OnModelCreating(DbModelBuilder modelBuilder)
-        {
-            throw new UnintentionalCodeFirstException();
-        }
-    
-        public virtual DbSet<Device> Devices { get; set; }
-        public virtual DbSet<Module2Tag> Module2Tag { get; set; }
-        public virtual DbSet<Tag> Tags { get; set; }
-        public virtual DbSet<Lang> Langs { get; set; }
-        public virtual DbSet<Payment> Payments { get; set; }
-        public virtual DbSet<Device2Module> Device2Module { get; set; }
-        public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
-        public virtual DbSet<Module> Modules { get; set; }
     }
+
+    protected override void OnModelCreating(DbModelBuilder modelBuilder)
+    {
+      throw new UnintentionalCodeFirstException();
+    }
+
+    public virtual DbSet<Device> Devices { get; set; }
+    public virtual DbSet<Module2Tag> Module2Tag { get; set; }
+    public virtual DbSet<Tag> Tags { get; set; }
+    public virtual DbSet<Lang> Langs { get; set; }
+    public virtual DbSet<Payment> Payments { get; set; }
+    public virtual DbSet<Device2Module> Device2Module { get; set; }
+    public virtual DbSet<AspNetUser> AspNetUsers { get; set; }
+    public virtual DbSet<Module> Modules { get; set; }
+  }
 }

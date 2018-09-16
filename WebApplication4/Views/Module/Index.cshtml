@@ -1,112 +1,135 @@
 ﻿@model WebApplication4.Controllers.IndexViewModel
 
 @{
-	ViewBag.Title = "Index";
+  ViewBag.Title = "Index";
 }
 
 <h2>Index</h2>
 
 @using (Html.BeginForm("Index", "Module", FormMethod.Get))
 {
-	@Html.DisplayNameFor(model => model.NativeLang)
-	@Html.DropDownListFor(model => model.NativeLang, Model.NativeLangList, null, new { onchange = "submit();" })	@:&nbsp
-	@Html.DisplayNameFor(model => model.ForeignLang)
-	@Html.DropDownListFor(model => model.ForeignLang, Model.ForeignLangList, null, new { onchange = "submit();" })	@:&nbsp
-	@Html.DisplayNameFor(model => model.OrderBy)
-	@Html.DropDownListFor(model => model.OrderBy, new SelectList(new List<string>() { "Newest first", "Name (a-z)", "Name (z-a)", "Price (hi-low)", "Price (low-hi)", "Popular first", "Popular last" }), null, new { onchange = "submit();" })
+  @Html.DisplayNameFor(model => model.NativeLang)
+  @Html.DropDownListFor(model => model.NativeLang, Model.NativeLangList, null, new { onchange = "submit();" })	@:&nbsp
+  @Html.DisplayNameFor(model => model.ForeignLang)
+  @Html.DropDownListFor(model => model.ForeignLang, Model.ForeignLangList, null, new { onchange = "submit();" })	@:&nbsp
+  @Html.DisplayNameFor(model => model.OrderBy)
+  @Html.DropDownListFor(model => model.OrderBy, new SelectList(new List<string>() { "Newest first", "Name (a-z)", "Name (z-a)", "Price (hi-low)", "Price (low-hi)", "Popular first", "Popular last" }), null, new { onchange = "submit();" })
+  @Html.TextBoxFor(model => model.Search) <input type="submit" value="Search"/>
+  <div class="row">
+    <div class="col-xs-4 col-sm-4 col-md-4 text-left">
+      @Html.ActionLink("Create New", "Create")
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4 text-left">
+      <strong>Pages: </strong>
+      @if (Model.CurPage > 0)
+      {
+        @Html.RouteLink("[0]", "Modules", new { nativeLang = Model.NativeLang, foreignLang = Model.ForeignLang, orderBy = Model.OrderBy, page = 0, pageSize = Model.PageSize, search = Model.Search }, null);
+        <strong>...</strong>
+        @Html.RouteLink("[<]", "Modules", new { nativeLang = Model.NativeLang, foreignLang = Model.ForeignLang, orderBy = Model.OrderBy, page = (Model.CurPage - 1), pageSize = Model.PageSize, search = Model.Search }, null);
+      }
+      <strong>[@Model.CurPage]</strong>
+      @if (Model.CurPage < Model.TotalPages - 1)
+      {
+        @Html.RouteLink("[>]", "Modules", new { nativeLang = Model.NativeLang, foreignLang = Model.ForeignLang, orderBy = Model.OrderBy, page = (Model.CurPage + 1), pageSize = Model.PageSize, search = Model.Search }, null);
+        <strong>...</strong>
+        @Html.RouteLink("[" + (Model.TotalPages - 1) + "]", "Modules", new { nativeLang = Model.NativeLang, foreignLang = Model.ForeignLang, orderBy = Model.OrderBy, page = Model.TotalPages - 1, pageSize = Model.PageSize, search = Model.Search }, null);
+      }
+    </div>
+    <div class="col-xs-4 col-sm-4 col-md-4 text-left">
+      <strong>Page Size: </strong>
+      @Html.DropDownListFor(model => model.PageSize, new SelectList(new List<int>() { 5, 10, 20, 50, 200 }), null, new { onchange = "submit();" })
+    </div>
+  </div>
 }
 
-<p>
-	@Html.ActionLink("Create New", "Create")
-</p>
 <table class="table">
-	<tr>
-		<th>
-			@Html.DisplayNameFor(model => model.ModuleList[0].Name)
-		</th>
-		<th>
-			@Html.DisplayNameFor(model => model.ModuleList[0].Description)
-		</th>
-		<th>
-			@Html.DisplayNameFor(model => model.ModuleList[0].Price)
-		</th>
-		@if (Model.IsAdmin)
-		{
-			<th>
-				@Html.DisplayNameFor(model => model.ModuleList[0].SoldNumber)
-			</th>
-		}
-		@if (!Request.Browser.IsMobileDevice)
-		{
-				<th>
-					@Html.DisplayNameFor(model => model.ModuleList[0].Text)
-				</th>
-		}
-		@if (Model.IsAdmin)
-		{
-			<th>
-				@Html.DisplayNameFor(model => model.ModuleList[0].AspNetUser.UserName)
-			</th>
-		}
-		@if (Model.IsAdmin)
-		{
-			<th>
-				@Html.DisplayNameFor(model => model.ModuleList[0].Locked)
-			</th>
-		}
-		<th></th>
-	</tr>
+  <tr>
+    <th>
+      @Html.DisplayNameFor(model => model.ModuleList[0].Name)
+    </th>
+    <th>
+      @Html.DisplayNameFor(model => model.ModuleList[0].Description)
+    </th>
+    <th>
+      @Html.DisplayNameFor(model => model.ModuleList[0].Price)
+    </th>
+    @if (Model.IsAdmin)
+    {
+      <th>
+        @Html.DisplayNameFor(model => model.ModuleList[0].SoldNumber)
+      </th>
+    }
+    @if (!Request.Browser.IsMobileDevice)
+    {
+      <th>
+        @Html.DisplayNameFor(model => model.ModuleList[0].Text)
+      </th>
+    }
+    @if (Model.IsAdmin)
+    {
+      <th>
+        @Html.DisplayNameFor(model => model.ModuleList[0].AspNetUser.UserName)
+      </th>
+    }
+    @if (Model.IsAdmin)
+    {
+      <th>
+        @Html.DisplayNameFor(model => model.ModuleList[0].Locked)
+      </th>
+    }
+    <th></th>
+  </tr>
 
-	@foreach (var item in Model.ModuleList)
-	{
-		<tr>
-			<td>
-				@Html.DisplayFor(modelItem => item.Name)
-			</td>
-			<td>
-				@Html.DisplayFor(modelItem => item.Description)
-			</td>
-			<td>
-				@Html.DisplayFor(modelItem => item.Price)
-			</td>
-			@if (Model.IsAdmin)
-			{
-				<td>
-					@Html.DisplayFor(modelItem => item.SoldNumber)
-				</td>
-			}
-			@if (!Request.Browser.IsMobileDevice)
-			{
-				<td>
-					<pre>@Html.DisplayFor(modelItem => item.Text)</pre>
-				</td>
-			}
-			@if (Model.IsAdmin)
-			{
-				<td>
-					@Html.DisplayFor(modelItem => item.AspNetUser.UserName)
-				</td>
-			}
-			@if (Model.IsAdmin)
-			{
-				<td>
-					@Html.DisplayFor(modelItem => item.Locked)
-				</td>
-			}
-			<td>
-				@if (User.Identity.IsAuthenticated)
-				{
-					@Html.ActionLink("Edit", "Edit", new { id = item.Id })
-					@:|
+  @foreach (var item in Model.ModuleList)
+  {
+    <tr>
+      <td>
+        @Html.DisplayFor(modelItem => item.Name)
+      </td>
+      <td>
+        @Html.DisplayFor(modelItem => item.Description)
+      </td>
+      <td>
+        @Html.DisplayFor(modelItem => item.Price)
+      </td>
+      @if (Model.IsAdmin)
+      {
+        <td>
+          @Html.DisplayFor(modelItem => item.SoldNumber)
+        </td>
+      }
+      @if (!Request.Browser.IsMobileDevice)
+      {
+        <td>
+          <pre>@Html.DisplayFor(modelItem => item.Text)</pre>
+        </td>
+      }
+      @if (Model.IsAdmin)
+      {
+        <td>
+          @Html.DisplayFor(modelItem => item.AspNetUser.UserName)
+        </td>
+      }
+      @if (Model.IsAdmin)
+      {
+        <td>
+          @Html.DisplayFor(modelItem => item.Locked)
+        </td>
+      }
+      <td>
+        @if (User.Identity.IsAuthenticated)
+        {
+          @Html.ActionLink("Edit", "Edit", new { id = item.Id })
+          @:|
 				}
-				@Html.ActionLink("Details", "Details", new { id = item.Id })
-				@if (User.Identity.IsAuthenticated)
-				{
-					@:|
-					@Html.ActionLink("Delete", "Delete", new { id = item.Id })
-				}
-			</td>
-		</tr>
-	}
+        @Html.ActionLink("Details", "Details", new { id = item.Id })
+        @if (User.Identity.IsAuthenticated)
+        {
+          @:|
+          @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+        }
+      </td>
+    </tr>
+  }
 
 </table>

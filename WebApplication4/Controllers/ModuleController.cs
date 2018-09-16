@@ -65,12 +65,12 @@ namespace WebApplication4.Controllers
       */
 
     // GET: /Module/
-    public ActionResult Index(string nativeLang, string foreignLang, string orderBy)
+    public ActionResult Index(string nativeLang = "---", string foreignLang = "---", string orderBy = "Newest first", int page = 0, int pageSize = 20, string search = null)
     {
       var modules = db.Modules.AsQueryable();
-      if (!string.IsNullOrEmpty(nativeLang) && nativeLang != "-?-") //if native is not specified, show modules where native lang is any
+      if (!string.IsNullOrEmpty(nativeLang) && nativeLang != "---") //if native is not specified, show modules where native lang is any
         modules = modules.Where(o => o.NativeLang == nativeLang);
-      if (!string.IsNullOrEmpty(foreignLang) && foreignLang != "-?-") //if foreign is not specified, show modules where foreign lang is any
+      if (!string.IsNullOrEmpty(foreignLang) && foreignLang != "---") //if foreign is not specified, show modules where foreign lang is any
         modules = modules.Where(o => o.ForeignLang == foreignLang);
 
       switch (orderBy)
@@ -88,7 +88,13 @@ namespace WebApplication4.Controllers
       if (!User.Identity.IsAuthenticated)
         modules = modules.Where(o => o.Locked);
 
-      //TODO: apply last moment filters here
+      // apply last moment filters here
+      if (!string.IsNullOrWhiteSpace(search))
+        modules = modules.Where(o => o.Name.Contains(search) || o.Description.Contains(search) || o.Text.Contains(search));
+
+      // paginate
+      int curTotal = modules.Count();
+      modules = modules.Skip(page * pageSize).Take(pageSize);
 
       //add Text preview
       foreach (var m in modules)
@@ -109,7 +115,12 @@ namespace WebApplication4.Controllers
         NativeLangList = new SelectList(l, "LangCode", "LangName"),
         ForeignLang = foreignLang,
         NativeLang = nativeLang,
-        ModuleList = modules.ToList()
+        OrderBy = orderBy,
+        ModuleList = modules.ToList(),
+        CurPage = page,
+        PageSize = pageSize,
+        CurTotal = curTotal,
+        Search = search
       };
       return View(vm);
     }
@@ -159,7 +170,7 @@ namespace WebApplication4.Controllers
     [Authorize]
     public ActionResult Create()
     {
-      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
+      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "---");
       var vm = new CreateViewModel()
       {
         ForeignLangList = new SelectList(l, "LangCode", "LangName").ToList(),
@@ -181,7 +192,7 @@ namespace WebApplication4.Controllers
     public ActionResult Create([Bind(Include = "Id,Name,Description,Price,NativeLang,ForeignLang,Text,ForeignName,ForeignDescription", Exclude = "SoldNumber,UserId")] CreateViewModel vm, HttpPostedFileBase file)
     {
       if (User.Identity.Name == null) return RedirectToAction("Index");//must be logged in to create/edit/delete
-      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-");
+      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "---");
       vm.ForeignLangList = new SelectList(l, "LangCode", "LangName");
       vm.NativeLangList = new SelectList(l, "LangCode", "LangName");
       vm.TransUILabels = transUILabelsTemplate;
@@ -243,7 +254,7 @@ namespace WebApplication4.Controllers
           return RedirectToAction("Details", new { id = id });
       }
 
-      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "-?-").ToList();
+      IEnumerable<Lang> l = db.Langs.Where(o => o.LangCode != "---").ToList();
       string filePath = Directory.GetFiles(Server.MapPath("~/Content/Upload"), m.Id + ".*").FirstOrDefault();
       var vm = new CreateViewModel()
       {
@@ -742,6 +753,17 @@ namespace WebApplication4.Controllers
     public SelectList NativeLangList { get; set; }
     public string OrderBy { get; set; }
     public List<Module> ModuleList { get; set; }
+    public int CurPage { get; set; }
+    public int PageSize { get; set; }
+    public int CurTotal { get; set; }
+    public int TotalPages
+    {
+      get
+      {
+        return (int)Math.Ceiling(CurTotal / (double)PageSize);
+      }
+    }
+    public string Search { get; set; }
   }
 
   /// <summary>Metadata and text for each module (built-in or downloaded), including UI labels for Tutor app, if custom lang is defined.

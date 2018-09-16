@@ -18,6 +18,12 @@ namespace WebApplication4
           url: "{controller}/{action}/{id}",
           defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
       );
+
+      routes.MapRoute(
+          "Modules",
+          "Module/nativeLang/{nativeLang}/foreignLang/{foreignLang}/orderBy/{orderBy}/page/{page}/pagesize/{pageSize}/search/{search}",
+          new { controller = "Module", action = "Index", nativeLang = UrlParameter.Optional, foreignLang = UrlParameter.Optional, orderBy = UrlParameter.Optional, page = UrlParameter.Optional, pageSize = UrlParameter.Optional, search = UrlParameter.Optional }
+      );
       //routes.MapRoute(
       //    name: "Default",
       //    url: "{controller}/{action}/{id}",

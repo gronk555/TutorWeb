@@ -13,8 +13,8 @@
   @Html.DisplayNameFor(model => model.ForeignLang)
   @Html.DropDownListFor(model => model.ForeignLang, Model.ForeignLangList, null, new { onchange = "submit();" })	@:&nbsp
   @Html.DisplayNameFor(model => model.OrderBy)
-  @Html.DropDownListFor(model => model.OrderBy, new SelectList(new List<string>() { "Newest first", "Name (a-z)", "Name (z-a)", "Price (hi-low)", "Price (low-hi)", "Popular first", "Popular last" }), null, new { onchange = "submit();" })
-  @Html.TextBoxFor(model => model.Search) <input type="submit" value="Search"/>
+  @Html.DropDownListFor(model => model.OrderBy, new SelectList(new List<string>() { "Newest first", "Name (a-z)", "Name (z-a)", /*"Price (hi-low)", "Price (low-hi)",*/ "Popular first", "Popular last" }), null, new { onchange = "submit();" }) @:&nbsp
+  @Html.TextBoxFor(model => model.Search) <input type="submit" value="Search" />
   <div class="row">
     <div class="col-xs-4 col-sm-4 col-md-4 text-left">
       @Html.ActionLink("Create New", "Create")
@@ -50,7 +50,7 @@
     <th>
       @Html.DisplayNameFor(model => model.ModuleList[0].Description)
     </th>
-    <th>
+    @*<th>
       @Html.DisplayNameFor(model => model.ModuleList[0].Price)
     </th>
     @if (Model.IsAdmin)
@@ -58,7 +58,7 @@
       <th>
         @Html.DisplayNameFor(model => model.ModuleList[0].SoldNumber)
       </th>
-    }
+    }*@
     @if (!Request.Browser.IsMobileDevice)
     {
       <th>
@@ -89,7 +89,7 @@
       <td>
         @Html.DisplayFor(modelItem => item.Description)
       </td>
-      <td>
+      @*<td>
         @Html.DisplayFor(modelItem => item.Price)
       </td>
       @if (Model.IsAdmin)
@@ -97,7 +97,7 @@
         <td>
           @Html.DisplayFor(modelItem => item.SoldNumber)
         </td>
-      }
+      }*@
       @if (!Request.Browser.IsMobileDevice)
       {
         <td>
@@ -119,14 +119,18 @@
       <td>
         @if (User.Identity.IsAuthenticated)
         {
-          @Html.ActionLink("Edit", "Edit", new { id = item.Id })
-          @:|
-				}
-        @Html.ActionLink("Details", "Details", new { id = item.Id })
+          <div class="row">
+            @Html.ActionLink("Edit", "Edit", new { id = item.Id })
+          </div>
+        }
+        <div class="row">
+          @Html.ActionLink("Details", "Details", new { id = item.Id })
+        </div>
         @if (User.Identity.IsAuthenticated)
         {
-          @:|
-          @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+          <div class="row">
+            @Html.ActionLink("Delete", "Delete", new { id = item.Id })
+          </div>
         }
       </td>
     </tr>

@@ -102,7 +102,10 @@ namespace WebApplication4.Controllers
         //cut off the unique suffix from Name
         m.Name = m.Name.Substring(0, m.Name.LastIndexOf('_'));
         if (!String.IsNullOrWhiteSpace(m.Text))
-          m.Text = m.Text.Substring(0, Math.Min(m.Text.Length, 100)) + "...";
+        {
+          var lines = m.Text.Split(new string[] { "\r\n", "\r", "\n" }, 7, StringSplitOptions.RemoveEmptyEntries).Take(6);
+          m.Text = string.Join("\r\n", lines);
+        }
       }
 
       var curUser = db.AspNetUsers.FirstOrDefault(o => o.UserName == User.Identity.Name);

@@ -8,7 +8,7 @@
     if (!module.length) return false; // wrong page, dont set up other event handlers
     addPhraseTemplate();
     populateModule(moduleText); // moduleText defined in Edit.cshtml
-    clearAllDirty();
+    //clearAllDirty(); //TODO: temp, uncomment!
     module
       .on("dragover", false)
       .on("dragenter", false)
@@ -153,7 +153,7 @@
     debugger; 
     var lines = text.split(/\r\n|\n\r|\r|\n/g); // tolerate both Windows and Unix linebreaks
 
-    //temp solution to add extra line and remove non-alphanumeric chars:
+    //TODO: temporary solution to add extra line and remove non-alphanumeric chars:
     let j = 0;
     for (var i = 0; i < lines.length; i++) {
       //append to the end of existing module text

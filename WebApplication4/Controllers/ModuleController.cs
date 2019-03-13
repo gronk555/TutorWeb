@@ -477,6 +477,23 @@ namespace WebApplication4.Controllers
       return SerializeJSon<ModuleData>(result);
     }
 
+    /// <summary>
+    /// download sound file for a phrase, called from mobile
+    /// </summary>
+    /// <param name="phraseText">sound file name matches phrase text</param>
+    /// <returns>sound file content</returns>
+    [HttpPost]
+    public FileResult DownloadSound(string phraseText, string langCode)
+    {
+      if (!string.IsNullOrWhiteSpace(phraseText) && !string.IsNullOrWhiteSpace(langCode))
+      {
+        var filePath = Utils.ttsFilePath(phraseText, langCode);
+        if (System.IO.File.Exists(filePath))
+          return File(filePath, "audio/mpeg");
+      }
+      return null;
+    }
+
     private string PrepareTransUILabels(string text, string nativeLangCode, string foreignLangCode)
     {
       if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(nativeLangCode) || string.IsNullOrWhiteSpace(foreignLangCode)) return null;

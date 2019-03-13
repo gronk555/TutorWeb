@@ -19,6 +19,7 @@ namespace WebApplication4
       FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
       RouteConfig.RegisterRoutes(RouteTable.Routes);
       BundleConfig.RegisterBundles(BundleTable.Bundles);
+      //we use cache as a global variable, where we keep path to sound files, so strictly speaking our web service is not stateless TODO: why not Utils.ttsPath?
       HttpRuntime.Cache.Add("ttsPath", HttpContext.Current.Server.MapPath("~/Content/TTS/"), null, Cache.NoAbsoluteExpiration, Cache.NoSlidingExpiration, CacheItemPriority.High, null);
       //start agent timer with task to flush module cache every 2 mins
       agentTimer = new Timer(new TimerCallback(Utils.AgentCallback), null, 0, 120000);

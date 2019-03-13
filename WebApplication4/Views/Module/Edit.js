@@ -8,7 +8,7 @@
     if (!module.length) return false; // wrong page, dont set up other event handlers
     addPhraseTemplate();
     populateModule(moduleText); // moduleText defined in Edit.cshtml
-    //clearAllDirty(); //TODO: temp, uncomment!
+    clearAllDirty();
     module
       .on("dragover", false)
       .on("dragenter", false)
@@ -31,8 +31,6 @@
     .on("change", "#file-input", e => startReadingFile(e.target.files[0]))
     .on("change", "[name='NativeLang']", () => updateNativeLangInText())
     .on("change", "[name='ForeignLang']", () => updateForeignLangInText())
-    .on("input", '[contenteditable]', e => onInput($(e.target.parentNode))) // TODO: test IE, if input is not fired, add blur keyup paste 
-    .on('paste', '[contenteditable]', e => onInput($(e.target.parentNode)))
     .on('keydown', '[contenteditable]', e => {
       var text = getTextAroundCursor();
       var curRow = $(e.target.parentNode);
@@ -62,6 +60,10 @@
             }
             return false; // prevent standard behaviour
           }
+          else {
+            document.execCommand("delete", false, null);
+            return false;
+            }
           break;
         }
         case 46: { //del
@@ -72,7 +74,24 @@
             shiftRowsUp(nextRow);
             return false; // prevent standard behaviour
           }
+          else {
+            document.execCommand("forwardDelete", false, null);
+            return false;
+          }
           break;
+        }
+        case 17, 18: return true;
+        default: {
+          // TODO: bad attempt for undo/redo: selectAll is remembered in undo stack
+          // see https://dev.to/chromiumdev/-native-undo--redo-for-the-web-3fl3
+          onRowChanged(curRow); // mark as dirty
+          if (e.ctrlKey || e.altKey) return true;
+          let cleanTextBefore = cleanString(text.before);
+          let cleanTextAfter = cleanString(text.after);
+          curRow.children().last().focus();
+          document.execCommand("selectAll");
+          document.execCommand("insertText", false, cleanTextBefore + cleanTextAfter);
+          setCursorAtPos(curRow, cleanTextBefore.length);
         }
       }
     })
@@ -86,14 +105,6 @@
   };
 
   var db = _.debounce(() => saveModuleText(), 3000);
-  function onInput(curRow) { // when typing or pasting, clean the string of all illegal chars
-    let txt = getTextAroundCursor();
-    let cleanTextBefore = cleanString(txt.before);
-    let cleanTextAfter = cleanString(txt.after);
-    setText(curRow, cleanTextBefore + cleanTextAfter, true);
-    setCursorAtPos(curRow, cleanTextBefore.length)
-    onRowChanged(curRow);
-  }
 
   function onRowChanged(curRow) {
     curRow.addClass("dirty");
@@ -153,27 +164,11 @@
     debugger; 
     var lines = text.split(/\r\n|\n\r|\r|\n/g); // tolerate both Windows and Unix linebreaks
 
-    //TODO: temporary solution to add extra line and remove non-alphanumeric chars:
-    let j = 0;
     for (var i = 0; i < lines.length; i++) {
       //append to the end of existing module text
-      var curRow = j++ % 4 ? curRow.next() : addPhraseTemplate(); // by default all rows are Dirty
-      let cleanStr = cleanString(lines[i]);
-      setText(curRow, cleanStr);
-      if (!cleanStr && i < lines.length && cleanString(lines[i - 1]) && cleanString(lines[i + 1])) // look 1 row ahead, and 1 back, if they are not empty, then add an empty row
-      {
-        j++;
-        curRow = curRow.next();
-        if (curRow.length) setText(curRow, '');
-      }
+      var curRow = i % 4 ? curRow.next() : addPhraseTemplate(); // by defaule all rows are Dirty
+      setText(curRow, cleanString(lines[i]));
     }
-
-
-    //for (var i = 0; i < lines.length; i++) {
-    //  //append to the end of existing module text
-    //  var curRow = i % 4 ? curRow.next() : addPhraseTemplate(); // by defaule all rows are Dirty
-    //  setText(curRow, cleanString(lines[i]));
-    //}
   }
 
   function fileSize(b) {
@@ -308,8 +303,9 @@
   function getTextAroundCursor() {
     var range = window.getSelection().getRangeAt(0);
     cursorIndex = range.startOffset;
-    textBefore = range.startContainer.textContent.substring(0, cursorIndex);
-    textAfter = range.startContainer.textContent.substring(cursorIndex);
+    let text = range.startContainer.wholeText || range.startContainer.textContent;
+    textBefore = text.substring(0, cursorIndex);
+    textAfter = text.substring(cursorIndex);
     return { before: textBefore, after: textAfter, cursorPos: cursorIndex };
   }
 

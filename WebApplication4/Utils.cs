@@ -8,6 +8,7 @@ using System.Configuration;
 using WebApplication4.Models;
 using System.Net;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace WebApplication4
 {
@@ -20,8 +21,10 @@ namespace WebApplication4
     {
       /// <summary>All rows of the module</summary>
       public List<DirtyRow> Rows = new List<DirtyRow>();
-      /// <summary>Must be saved to file</summary>
+      /// <summary>Must be saved to database</summary>
       public bool IsDirty = false;
+      /// <summary>Module text has changed, and TTS must be run again</summary>
+      public bool IsModified = false;
       /// <summary>Must download TTS for all phrases</summary>
       public bool EnableTTS = false;
       /// <summary>TTS for all phrases has been downloaded</summary>
@@ -108,13 +111,19 @@ namespace WebApplication4
         if (param.TotalRowCnt < cm.Rows.Count)
           cm.Rows.RemoveRange(param.TotalRowCnt, cm.Rows.Count - param.TotalRowCnt);
         else if (param.TotalRowCnt > cm.Rows.Count)
-          cm.Rows.AddRange(new DirtyRow[param.TotalRowCnt - cm.Rows.Count]); // allocate for new rows
+        {
+          // allocate for new rows
+          var newRange = Enumerable.Range(0, param.TotalRowCnt - cm.Rows.Count)
+            .Select(i => new DirtyRow() { iRow = cm.Rows.Count, value = "", CompletedTTS = false }); // this is not obvious how indexing increments
+          cm.Rows.AddRange(newRange);
+        };
         Array.ForEach<DirtyRow>(param.DirtyRows, r =>
         {
           r.value = r.value == null ? r.value : string.Join(" ", r.value.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries)).Trim(); //replace invalid file chars with space
-        cm.Rows[r.iRow] = r;
+          cm.Rows[r.iRow] = r;
         }); // copy all updated rows to cache
         cm.IsDirty = true; //set after copying is done, otherwise FlushModuleCache may flush the cached module and mark it as clean before we finished copying dirtyRows
+        cm.IsModified = true; //even if getTTS has just finished downloading all sounds for the module, the new change must make getTTS run again.
         cm.EnableTTS = param.EnableTTS; // will be used by getTTS
       }
       catch (Exception ex)
@@ -179,6 +188,7 @@ namespace WebApplication4
         try
         {
           m.Value.CompletedTTS = true;
+          m.Value.IsModified = false; // may be flipped in outside thread by UpdateModuleCach
           foreach (var r in m.Value.Rows.Where(rr => !rr.CompletedTTS && !string.IsNullOrWhiteSpace(rr.value)))
           {
             string langCode = m.Value.LangCode(r.iRow);
@@ -186,9 +196,10 @@ namespace WebApplication4
             foreach (var word in r.value.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries))
             {
               var _word = word.Where(c => !char.IsPunctuation(c)).Aggregate("", (current, c) => current + c); // remove remaining punctuation from separate words
-              r.CompletedTTS &= DownloadTTS(_word, langCode, ttsFilePath(_word, langCode));
+              if (!string.IsNullOrWhiteSpace(_word))
+                r.CompletedTTS &= DownloadTTS(_word, langCode, ttsFilePath(_word, langCode));
             }
-            m.Value.CompletedTTS &= r.CompletedTTS;
+            m.Value.CompletedTTS &= (r.CompletedTTS && !m.Value.IsModified);
           }
           // after module download finished, check if user's session is expired, then remove module from cache
           if (moduleCache[m.Key].SessionExpired && m.Value.CompletedTTS)
@@ -200,7 +211,11 @@ namespace WebApplication4
         catch (Exception ex)
         {
           // TODO: if we call UpdateModuleCache while getTTS is working, getTTS will throw "collection was modified" and will restart all modules in 2 mins
-          // probably more graceful is to call ToList(), then check on every iteration that m.Value.EnableTTS is still true, otherwise skip the module m
+          // probably more graceful is to 
+          // 1. create a copy of module rows by calling Rows.ToList(), 
+          // 2. iterate all of them, 
+          // 3. after finishing each module, check a flag module.IsModified that is set outside of loop by UpdateModuleCache: if (m.IsModified) CompletedTTS = false;
+          // so that external modification during getTTS will mark module dirty for another round
           m.Value.CompletedTTS = false;
           Log($"{ex.Message}\r\n{ex.StackTrace}");
         }
@@ -208,7 +223,7 @@ namespace WebApplication4
       getTTSIsRunning = false;
     }
 
-    private static string ttsFilePath(string phrase, string langCode)
+    public static string ttsFilePath(string phrase, string langCode)
     {
       var ttsPath = HttpRuntime.Cache["ttsPath"] as string;
       phrase = phrase.ToLowerInvariant() == "con" ? "conn" : phrase; // "con" file is reserved for system console
@@ -260,6 +275,7 @@ namespace WebApplication4
           }
         };
         wc.Headers[HttpRequestHeader.ContentType] = "application/json";
+        wc.Encoding = Encoding.UTF8;
         try
         {
           dynamic res = System.Web.Helpers.Json.Decode(wc.UploadString(url, "POST", JsonConvert.SerializeObject(data)));

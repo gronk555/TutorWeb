@@ -354,7 +354,7 @@
   }
 
   function cleanString(s) {
-    return !s ? "" : s.replace(/[~#%&*{}\\:<>?/+|\"”“,.…¿¡\-—_'`!@$^()=\]\[;]/g, "");
+    return !s ? "" : s.replace(/[~#%&*{}\\:<>?/+|\"”“,.…¿¡\-—_`!@$^()=\]\[;]/g, "");
   }
 
   function setText(row, txt, skipEvent) {
